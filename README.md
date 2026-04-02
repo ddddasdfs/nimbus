@@ -15,7 +15,7 @@
 
 Rose is an open-source automatic skin changer for League of Legends that enables seamless access to all skins in the game. The application runs silently in the system tray and automatically detects skin selections during champion select, injecting the chosen skin when the game loads.
 
-**Rose is built on [Pengu Loader](https://github.com/FlorentTariolle/ROSE-Pengu)**, a plugin system that injects JavaScript plugins into the League Client, enabling enhanced UI interactions and quick skin detection.
+**Rose is built on Pengu Loader**, a plugin system that injects JavaScript plugins into the League Client, enabling enhanced UI interactions and quick skin detection.
 
 ## Architecture
 
@@ -26,7 +26,7 @@ Rose consists of three main components:
 - **LCU API Integration**: Communicates with the League Client via the League Client Update (LCU) API
 - **Skin Injection**: Handles skin injection compatible with Riot Vanguard
 - **WebSocket Bridge**: Operates a WebSocket server for real-time communication with frontend plugins
-- **Skin Management**: Downloads and manages encrypted skin files from the [LeagueSkins repository](https://github.com/Alban1911/LeagueSkins) — files are decrypted at runtime and wiped after use
+- **Skin Management**: Downloads and manages encrypted skin files from the [RoseSkins repository](https://github.com/Alban1911/RoseSkins) — files are decrypted at runtime and wiped after use
 - **Party Mode**: Enables skin sharing between friends in the same lobby via a Cloudflare WebSocket relay
 - **Game Monitoring**: Tracks game state, champion select phases, and loadout countdowns
 - **Analytics**: Sends periodic pings to track unique users (configurable, runs in background thread)
@@ -52,7 +52,7 @@ Rose includes a suite of JavaScript plugins that extend the League Client UI:
 
 ## How It Works
 
-1. **League Client Integration**: Rose activates **[Pengu Loader](https://github.com/FlorentTariolle/ROSE-Pengu)** on startup, which injects the JavaScript plugins into the League Client
+1. **League Client Integration**: Rose activates **Pengu Loader** on startup, which injects the JavaScript plugins into the League Client
 2. **Skin Detection**: When you hover over a skin in champion select, `ROSE-SkinMonitor` detects the selection and sends it to the Python backend
 3. **Game Opening Delay**: To make sure the injection has time to occur we suspend League of Legend's game process as long as the overlay is not ran
 4. **Game Injection**: Rose decrypts and injects the selected skin when the game starts
@@ -332,7 +332,7 @@ Rose/
 ### Key Technologies
 
 - **Python 3.11+**: Backend application
-- **[Pengu Loader](https://github.com/FlorentTariolle/ROSE-Pengu)**: Plugin system for League Client
+- **Pengu Loader**: Plugin system for League Client
 - **LCU API**: League Client communication
 - **WebSocket**: Real-time frontend-backend communication
 - **Cloudflare Workers + Durable Objects**: Party relay and skin key server

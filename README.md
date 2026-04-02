@@ -26,7 +26,7 @@ Rose consists of three main components:
 - **LCU API Integration**: Communicates with the League Client via the League Client Update (LCU) API
 - **Skin Injection**: Handles skin injection compatible with Riot Vanguard
 - **WebSocket Bridge**: Operates a WebSocket server for real-time communication with frontend plugins
-- **Skin Management**: Downloads and manages encrypted skin files from the [RoseSkins repository](https://github.com/Alban1911/RoseSkins) — files are decrypted at runtime and wiped after use
+- **Skin Management**: Downloads and manages encrypted skin files from the [RoseSkin repository](https://github.com/Alban1911/RoseSkin) — files are decrypted at runtime and wiped after use
 - **Party Mode**: Enables skin sharing between friends in the same lobby via a Cloudflare WebSocket relay
 - **Game Monitoring**: Tracks game state, champion select phases, and loadout countdowns
 - **Analytics**: Sends periodic pings to track unique users (configurable, runs in background thread)

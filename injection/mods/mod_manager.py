@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 from typing import List
 
+from utils.core.issue_reporter import report_issue
 from utils.core.logging import get_logger, log_success
 from utils.core.paths import get_user_data_dir
 from utils.core.safe_extract import safe_extractall, safe_extractall_from_bytes
@@ -61,6 +62,12 @@ class ModManager:
 
             key = get_skin_key()
             if key is None:
+                report_issue(
+                    "SKIN_DECRYPT_KEY_FAILED",
+                    "error",
+                    "Cannot decrypt skin: failed to fetch decryption key from server.",
+                    hint="Check your internet connection and firewall settings. In some countries, network restrictions may block access — try using a VPN.",
+                )
                 raise RuntimeError("Cannot decrypt skin: failed to fetch decryption key from server")
 
             encrypted_data = zp.read_bytes()

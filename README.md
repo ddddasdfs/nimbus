@@ -29,6 +29,7 @@ Rose consists of three main components:
 - **Skin Management**: Downloads and manages encrypted skin files from the [RoseSkin repository](https://github.com/Alban1911/RoseSkin) — files are decrypted at runtime and wiped after use
 - **Party Mode**: Enables skin sharing between friends in the same lobby via a Cloudflare WebSocket relay
 - **Game Monitoring**: Tracks game state, champion select phases, and loadout countdowns
+- **Auto-Updater**: Checks GitHub for new releases and prompts users to install updates
 - **Analytics**: Sends periodic pings to track unique users (configurable, runs in background thread)
 
 ### Cloudflare Workers
@@ -49,6 +50,7 @@ Rose includes a suite of JavaScript plugins that extend the League Client UI:
 - **ROSE-RandomSkin**: Random skin selection feature
 - **ROSE-HistoricMode**: Access to the last used skin for every champion
 - **ROSE-PartyMode**: Party mode UI — displays a panel in lobby and champion select to enable skin sharing, view connected peers, and see friends' skin selections in real time
+- **ROSE-Jade**: Client customization — regalia borders, backgrounds, banners, icons, titles, and win/loss stats
 
 ## How It Works
 

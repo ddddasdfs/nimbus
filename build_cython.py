@@ -16,6 +16,8 @@ from pathlib import Path
 CYTHON_MODULES = [
     "utils/crypto/skin_crypto.py",
     "utils/crypto/key_provider.py",
+    "utils/crypto/client_secrets.py",
+    "utils/crypto/integrity.py",
 ]
 
 

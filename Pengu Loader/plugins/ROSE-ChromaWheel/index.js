@@ -154,6 +154,9 @@
       overflow: hidden;
       width: 100%;
       padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .${BUTTON_CLASS} .content {
@@ -166,9 +169,11 @@
       background-size: contain;
       border: 2px solid #010a13;
       border-radius: 50%;
-      height: 16px;
-      margin: 1px;
-      width: 16px;
+      box-sizing: border-box;
+      height: 20px;
+      width: 20px;
+      margin: 0;
+      flex-shrink: 0;
     }
 
     .${BUTTON_CLASS} .inner-mask {
@@ -212,10 +217,7 @@
       display: block;
     }
 
-    /* Adjust content positioning in Swiftplay buttons */
-    .thumbnail-wrapper .${BUTTON_CLASS} .content {
-      transform: translate(1px, 1px);
-    }
+    /* Swiftplay buttons inherit flexbox centering from .frame-color */
 
     .chroma.icon {
       display: none !important;

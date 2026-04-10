@@ -18,13 +18,16 @@ log = get_logger()
 class LCUMonitorThread(threading.Thread):
     """Thread for monitoring LCU connection and language changes"""
     
-    def __init__(self, lcu: LCU, state: SharedState, language_callback: Callable[[str], None], ws_thread=None, 
-                 db=None, skin_scraper=None, injection_manager=None, disconnect_callback: Optional[Callable[[], None]] = None):
+    def __init__(self, lcu: LCU, state: SharedState, language_callback: Callable[[str], None], ws_thread=None,
+                 db=None, skin_scraper=None, injection_manager=None,
+                 disconnect_callback: Optional[Callable[[], None]] = None,
+                 reconnect_callback: Optional[Callable[[], None]] = None):
         super().__init__(daemon=True)
         self.lcu = lcu
         self.state = state
         self.language_callback = language_callback
         self.disconnect_callback = disconnect_callback
+        self.reconnect_callback = reconnect_callback
         self.ws_thread = ws_thread
         self.db = db  # Optional: for champion name lookup
         self.skin_scraper = skin_scraper  # Optional: for skin scraping on lock
@@ -33,6 +36,8 @@ class LCUMonitorThread(threading.Thread):
         self.last_language = None
         self.waiting_for_connection = False
         self.ws_connected = False
+        self._initial_ws_done = False  # Skip reconnect callback on first WS connection (handled by startup)
+        self._lcu_reconnected = False  # True only after LCU disconnect → reconnect cycle (account swap)
         self.language_initialized = False  # Track if language was successfully detected after reconnection
         self.last_language_check = 0.0  # Timestamp of last language check
         self.language_retry_count = 0  # Track consecutive language detection failures
@@ -62,6 +67,7 @@ class LCUMonitorThread(threading.Thread):
                     if self.waiting_for_connection:
                         log.info("LCU reconnected - waiting for WebSocket...")
                         self.waiting_for_connection = False
+                        self._lcu_reconnected = True
                 
                 # WebSocket connected after LCU reconnection
                 elif current_lcu_ok and current_ws_connected and not self.ws_connected:
@@ -76,6 +82,17 @@ class LCUMonitorThread(threading.Thread):
 
                     # Check initial champion select state (for issue #29: app starting after lock)
                     self._check_initial_champion_state()
+
+                    # Re-setup Pengu/injection only after a full LCU disconnect→reconnect
+                    # cycle (account swap), not on a simple WebSocket blip
+                    if self._initial_ws_done and self._lcu_reconnected and self.reconnect_callback:
+                        self._lcu_reconnected = False
+                        try:
+                            log.info("[LCU Monitor] Account swap detected - re-initializing Pengu and injection...")
+                            self.reconnect_callback()
+                        except Exception as e:
+                            log.warning(f"[LCU Monitor] Reconnection callback failed: {e}")
+                    self._initial_ws_done = True
                 
                 # Language not yet initialized - retry detection
                 elif current_lcu_ok and current_ws_connected and self.ws_connected and not self.language_initialized:

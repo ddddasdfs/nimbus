@@ -15,7 +15,7 @@
 
 Rose is an open-source automatic skin changer for League of Legends that enables seamless access to all skins in the game. The application runs silently in the system tray and automatically detects skin selections during champion select, injecting the chosen skin when the game loads.
 
-**Rose is built on [Pengu Loader](https://github.com/Tariolle/ROSE-Pengu)**, a plugin system that injects JavaScript plugins into the League Client, enabling enhanced UI interactions and quick skin detection.
+Built on the [Pengu Loader](https://github.com/Tariolle/ROSE-Pengu) framework, Rose integrates JavaScript extensions into the League Client to enable modular UI interactions. It strictly modifies local rendering variables to display custom models and textures. It is designed purely as an exploration of client-side asset management, providing no manipulation of network data, memory states, or gameplay mechanics, thereby **offering zero competitive advantage**.
 
 ## Architecture
 

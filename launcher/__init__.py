@@ -10,10 +10,9 @@ from .core.launcher import run_launcher
 from .updater import auto_update
 
 # Re-export subpackage classes for convenience
+# Coral note: the auto-updater (UpdateDownloader/UpdateInstaller/GitHubClient)
+# was removed for security. UpdateSequence remains only as a no-op stub.
 from .update.update_sequence import UpdateSequence
-from .update.update_downloader import UpdateDownloader
-from .update.update_installer import UpdateInstaller
-from .update.github_client import GitHubClient
 from .ui.update_dialog import UpdateDialog
 from .sequences.hash_check_sequence import HashCheckSequence
 from .sequences.skin_sync_sequence import SkinSyncSequence
@@ -22,9 +21,6 @@ __all__ = [
     'run_launcher',
     'auto_update',
     'UpdateSequence',
-    'UpdateDownloader',
-    'UpdateInstaller',
-    'GitHubClient',
     'UpdateDialog',
     'HashCheckSequence',
     'SkinSyncSequence',

@@ -8,7 +8,6 @@ Connects to a shared room where party members broadcast skin selections.
 import asyncio
 import hashlib
 import json
-import os
 from typing import Callable, Dict, List, Optional
 
 import websockets
@@ -18,12 +17,11 @@ from utils.core.logging import get_logger
 
 log = get_logger()
 
-try:
-    from .relay_config import RELAY_URL as _CONFIGURED_URL
-except ImportError:
-    _CONFIGURED_URL = ""
-
-RELAY_URL = os.environ.get("ROSE_RELAY_URL", _CONFIGURED_URL)
+# Coral: party-mode relay networking is hard-disabled. RELAY_URL is forced empty
+# so PartyRelay.connect() always bails out (see below) and no packet is ever sent,
+# regardless of any relay_config.py or CORAL_RELAY_URL environment variable. This
+# is defense in depth alongside the guard in party/core/party_manager.py:enable().
+RELAY_URL = ""
 PING_INTERVAL = 25.0
 
 

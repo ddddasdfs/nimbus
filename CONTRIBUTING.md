@@ -1,21 +1,21 @@
-# Contributing to Rose
+# Contributing to Coral
 
-Contributions are welcome! Report bugs or suggest features via GitHub Issues, submit pull requests, or join our [Discord](https://discord.com/invite/roseskins) for discussions.
+Contributions are welcome! Report bugs or suggest features via GitHub Issues, or submit pull requests.
 
 ## Setting up dev environment
 
 ```powershell
 # Create conda environment with Python 3.11
-conda create -n rose python=3.11 -y
+conda create -n coral python=3.11 -y
 
 # Activate the environment
-conda activate rose
+conda activate coral
 
 # Clone the repository
-git clone https://github.com/Alban1911/Rose.git
+git clone https://github.com/ddddasdfs/Coral.git
 
 # Navigate to project directory
-cd Rose
+cd Coral
 
 # Create a feature branch (e.g. feat/skin-preview, fix/chroma-crash, docs/readme)
 git checkout -b feat/your-feature-name
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ## Project Structure
 
 ```
-Rose/
+Coral/
 ├── main.py                 # Application entry point
 ├── config.py               # Configuration constants
 ├── requirements.txt        # Python dependencies
@@ -175,20 +175,17 @@ Rose/
 │       ├── shared_state.py
 │       └── app_status.py
 │
-├── launcher/               # Application launcher and updater
+├── launcher/               # Application launcher (startup checks)
 │   ├── core/
-│   │   └── launcher.py
+│   │   └── launcher.py     # Runs hash check + skin sync on startup (no auto-update)
 │   ├── sequences/          # Launch sequences
 │   │   ├── hash_check_sequence.py
 │   │   └── skin_sync_sequence.py
-│   ├── update/             # Update system
-│   │   ├── update_sequence.py
-│   │   ├── update_downloader.py
-│   │   ├── update_installer.py
-│   │   └── github_client.py
+│   ├── update/             # Auto-updater REMOVED in Coral; only a no-op stub remains
+│   │   └── update_sequence.py  # No-op (download/execute path + github_client deleted)
 │   ├── ui/
 │   │   └── update_dialog.py
-│   └── updater.py
+│   └── updater.py          # No-op auto_update() kept for backward compatibility
 │
 ├── party/                  # Party mode (skin sharing)
 │   ├── core/               # Party orchestration
@@ -210,34 +207,24 @@ Rose/
 │       ├── injection_hook.py
 │       └── ui_bridge.py
 │
-├── relay-worker/           # Cloudflare Worker — party relay
+├── relay-worker/           # Cloudflare Worker — party relay (source kept for reference; party networking is disabled in this fork)
 │   ├── src/
 │   │   ├── index.ts        # Worker entry point
 │   │   └── room.ts         # Durable Object party room
 │   └── wrangler.toml
 │
-├── skin-key-worker/        # Cloudflare Worker — skin key server
-│   ├── src/
-│   │   └── index.ts
-│   └── wrangler.toml
-│
-├── analytics/              # Analytics and user tracking
-│   └── core/
-│       ├── machine_id.py   # Machine ID retrieval (Windows Machine GUID)
-│       ├── analytics_client.py  # HTTP client for analytics pings
-│       └── analytics_thread.py  # Background thread for periodic pings
+│   # NOTE: The upstream `analytics/` package was REMOVED in Coral — no telemetry.
 │
 └── Pengu Loader/           # Pengu Loader and plugins
     ├── Pengu Loader.exe    # Pengu Loader executable
     └── plugins/            # JavaScript plugins
-        ├── ROSE-UI/
-        ├── ROSE-SkinMonitor/
-        ├── ROSE-ChromaWheel/
-        ├── ROSE-FormsWheel/
-        ├── ROSE-CustomWheel/
-        ├── ROSE-SettingsPanel/
-        ├── ROSE-RandomSkin/
-        ├── ROSE-HistoricMode/
-        ├── ROSE-PartyMode/
-        └── ROSE-Jade/
+        ├── CORAL-UI/
+        ├── CORAL-SkinMonitor/
+        ├── CORAL-ChromaWheel/
+        ├── CORAL-FormsWheel/
+        ├── CORAL-CustomWheel/
+        ├── CORAL-SettingsPanel/
+        ├── CORAL-RandomSkin/
+        ├── CORAL-HistoricMode/
+        └── CORAL-PartyMode/   # UI only; party networking disabled
 ```

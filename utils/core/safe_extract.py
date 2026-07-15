@@ -37,8 +37,10 @@ def is_safe_path(base_dir: Path, target_path: Path) -> bool:
         base_resolved = base_dir.resolve()
         target_resolved = target_path.resolve()
 
-        # Check if target is within base directory
-        return str(target_resolved).startswith(str(base_resolved))
+        # Proper containment check. A plain str.startswith() would wrongly accept
+        # a sibling like C:\target2 for base C:\target; comparing resolved path
+        # components (==, or base in target.parents) avoids that.
+        return target_resolved == base_resolved or base_resolved in target_resolved.parents
     except (OSError, ValueError):
         return False
 

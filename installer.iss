@@ -1,15 +1,15 @@
-; Rose Installer Script for Inno Setup
+; Coral Installer Script for Inno Setup
 ; This creates a proper Windows installer that registers the app
 
-#define MyAppName "Rose"
+#define MyAppName "Coral"
 #define MyAppVersion "1.2.10"
 #define MyAppVersionInfo "1.2.10.0"
-#define MyAppPublisher "Rose Team"
-#define MyAppURL "https://github.com/Alban1911/Rose"
-#define MyAppExeName "Rose.exe"
+#define MyAppPublisher "Coral Team"
+#define MyAppURL "https://github.com/ddddasdfs/Coral"
+#define MyAppExeName "Coral.exe"
 #define MyAppDescription "Effortless skin changer for League of Legends"
 ; Must match config.SINGLE_INSTANCE_MUTEX_NAME (used by the app to enforce single-instance)
-#define MyAppMutex "Local\RoseSingleInstance"
+#define MyAppMutex "Local\CoralSingleInstance"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -26,7 +26,7 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputDir=installer
-OutputBaseFilename=Rose_Setup
+OutputBaseFilename=Coral_Setup
 SetupIconFile=assets\icon.ico
 Compression=lzma
 SolidCompression=yes
@@ -40,7 +40,7 @@ VersionInfoVersion={#MyAppVersionInfo}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppDescription}
 VersionInfoProductName={#MyAppName}
-; Prevent install/uninstall while Rose is running (mutex is created by the running app)
+; Prevent install/uninstall while Coral is running (mutex is created by the running app)
 AppMutex={#MyAppMutex}
 
 [Languages]
@@ -52,7 +52,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 
 [Files]
 ; Main application files
-Source: "dist\Rose\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\Coral\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -66,17 +66,17 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 
 [UninstallRun]
 ; Uninstall Pengu Loader (removes d3d9.dll hook from the League directory)
-Filename: "{localappdata}\Rose\Pengu Loader\Pengu Loader.exe"; Parameters: "--uninstall --silent"; Flags: runhidden waituntilterminated skipifdoesntexist
-; Always remove the Rose auto-start scheduled task (created via schtasks /TN "Rose")
-Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN Rose /F"; Flags: runhidden
+Filename: "{localappdata}\Coral\Pengu Loader\Pengu Loader.exe"; Parameters: "--uninstall --silent"; Flags: runhidden waituntilterminated skipifdoesntexist
+; Always remove the Coral auto-start scheduled task (created via schtasks /TN "Coral")
+Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN Coral /F"; Flags: runhidden
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\_internal"
 Type: filesandordirs; Name: "{app}\injection\overlay"
 Type: filesandordirs; Name: "{app}\injection\mods"
 ; Remove user data stored in AppData
-; Rose stores user data in %LOCALAPPDATA%\Rose
-Type: filesandordirs; Name: "{localappdata}\Rose"
+; Coral stores user data in %LOCALAPPDATA%\Coral
+Type: filesandordirs; Name: "{localappdata}\Coral"
 ; Note: State files are now stored in user data directory, not in app directory
 
 [Code]
@@ -104,13 +104,13 @@ end;
 
 function InitializeUninstall(): Boolean;
 var
-  RoseRunning: Boolean;
+  CoralRunning: Boolean;
   LeagueRunning: Boolean;
 begin
-  RoseRunning := CheckForMutexes('{#MyAppMutex}');
+  CoralRunning := CheckForMutexes('{#MyAppMutex}');
   LeagueRunning := _IsLeagueRunning();
 
-  if RoseRunning and LeagueRunning then
+  if CoralRunning and LeagueRunning then
   begin
     MsgBox(
       '{#MyAppName} and League of Legends are both currently running.'#13#10 +
@@ -122,7 +122,7 @@ begin
     exit;
   end;
 
-  if RoseRunning then
+  if CoralRunning then
   begin
     MsgBox(
       '{#MyAppName} is currently running.'#13#10 +
@@ -190,7 +190,7 @@ begin
       { Remove legacy/broken startup entries that invoke rundll32 on Pengu Loader core.dll.
         This is what produces the RunDLL "module not found" dialog after uninstall. }
       if (_ContainsTextLower(ValLower, 'rundll32') and _ContainsTextLower(ValLower, 'pengu loader\core.dll')) or
-         _ContainsTextLower(ValLower, '\rose\_internal\pengu loader\core.dll') then
+         _ContainsTextLower(ValLower, '\coral\_internal\pengu loader\core.dll') then
       begin
         RegDeleteValue(RootKey, SubKey, Names[I]);
       end;
@@ -219,10 +219,10 @@ begin
   _DeleteStartupValuesIfMatch(HKLM, RunOnce6432);
 end;
 
-procedure _DeleteLocalAppDataRose();
+procedure _DeleteLocalAppDataCoral();
 begin
   { Ensure user data is removed before running external cleanup }
-  DelTree(ExpandConstant('{localappdata}\Rose'), True, True, True);
+  DelTree(ExpandConstant('{localappdata}\Coral'), True, True, True);
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
@@ -234,8 +234,8 @@ begin
 
   if CurUninstallStep = usPostUninstall then
   begin
-    _DeleteLocalAppDataRose();
-    { Remove the entire install directory (Program Files\Rose) in case
+    _DeleteLocalAppDataCoral();
+    { Remove the entire install directory (Program Files\Coral) in case
       runtime-generated files (logs, caches, etc.) were left behind. }
     DelTree(ExpandConstant('{app}'), True, True, True);
   end;

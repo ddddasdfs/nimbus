@@ -2,17 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 Update management package
-Handles update checking, downloading, and installation
+
+Coral note: the auto-updater has been removed for security. The download/execute
+path (update_downloader, update_installer) and the GitHub release client
+(github_client) are gone. UpdateSequence remains only as a no-op stub.
 """
 
 from .update_sequence import UpdateSequence
-from .update_downloader import UpdateDownloader
-from .update_installer import UpdateInstaller
-from .github_client import GitHubClient
 
-__all__ = ['UpdateSequence', 'UpdateDownloader', 'UpdateInstaller', 'GitHubClient']
-
-
-
-
-
+__all__ = ['UpdateSequence']

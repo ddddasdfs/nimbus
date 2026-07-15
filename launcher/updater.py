@@ -1,25 +1,32 @@
-"""Launcher auto-update logic for Rose.
+"""Launcher auto-update logic for Coral — DISABLED in Coral.
 
-Downloads the latest release ZIP from GitHub, stages it under the
-user data directory, and replaces the current installation when running
-as a frozen executable.
+Upstream Coral downloaded the latest release ZIP from GitHub and executed it with
+no signature/hash verification while running as administrator. Coral removes that
+path. `auto_update` is kept as a no-op for backward compatibility and never
+performs any network access or executes anything.
 """
 
 from __future__ import annotations
 
 from typing import Callable, Optional
 
-from .update.update_sequence import UpdateSequence
+from utils.core.logging import get_logger
 
-# Backward compatibility - maintain the auto_update function signature
+log = get_logger()
+
+
 def auto_update(
     status_callback: Callable[[str], None],
     progress_callback: Callable[[int], None],
     bytes_callback: Optional[Callable[[int, Optional[int]], None]] = None,
 ) -> bool:
-    """Download and install the latest release if a new version is available.
+    """No-op. Auto-update was removed from Coral for security.
 
-    Returns True when an update was installed, False otherwise.
+    Always returns False (no update installed).
     """
-    sequence = UpdateSequence()
-    return sequence.perform_update(status_callback, progress_callback, bytes_callback)
+    log.info("auto_update() called but auto-update is disabled in Coral; doing nothing.")
+    try:
+        status_callback("Auto-update disabled")
+    except Exception:
+        pass
+    return False

@@ -390,7 +390,7 @@ class MessageHandler:
             log.error(f"[SkinMonitor] Failed to handle settings request: {e}")
 
     def _handle_diagnostics_clear(self, payload: dict) -> None:
-        """Clear rose_diagnostics.txt (Diagnostics)"""
+        """Clear coral_diagnostics.txt (Diagnostics)"""
         try:
             ok = clear_issues()
             response_payload = {
@@ -407,7 +407,7 @@ class MessageHandler:
 
     def _handle_diagnostics_clear_category(self, payload: dict) -> None:
         """
-        Clear only a diagnostics category from rose_diagnostics.txt.
+        Clear only a diagnostics category from coral_diagnostics.txt.
         Categories:
           - injection_threshold
           - monitor_timeout
@@ -496,11 +496,11 @@ class MessageHandler:
                 pass
 
     def _clear_issues_categories(self, categories: set[str]) -> bool:
-        """Remove matching diagnostics entries from rose_diagnostics.txt (best-effort)."""
+        """Remove matching diagnostics entries from coral_diagnostics.txt (best-effort)."""
         try:
             if not categories:
                 return False
-            p = get_user_data_dir() / "rose_diagnostics.txt"
+            p = get_user_data_dir() / "coral_diagnostics.txt"
             if not p.exists():
                 return True
 
@@ -549,7 +549,7 @@ class MessageHandler:
 
     def _handle_diagnostics_request(self, payload: dict) -> None:
         """
-        Return a compact, user-friendly list of recent errors, derived from rose_diagnostics.txt.
+        Return a compact, user-friendly list of recent errors, derived from coral_diagnostics.txt.
         Also includes base skin confirmation stats from the tracker.
         The goal is "what to change" rather than raw logs.
         """
@@ -567,7 +567,7 @@ class MessageHandler:
             response_payload = {
                 "type": "diagnostics-data",
                 "errors": out,
-                "path": str(get_user_data_dir() / "rose_diagnostics.txt"),
+                "path": str(get_user_data_dir() / "coral_diagnostics.txt"),
                 "baseSkinStats": tracker_stats,
             }
             self._send_response(json.dumps(response_payload))
@@ -579,7 +579,7 @@ class MessageHandler:
                 pass
 
     def _compute_diagnostics_errors(self) -> list[dict]:
-        """Compute compact diagnostics error list from rose_diagnostics.txt (never raises)."""
+        """Compute compact diagnostics error list from coral_diagnostics.txt (never raises)."""
         try:
             raw_lines = read_issues_tail(max_lines=400)
             now = datetime.now()
@@ -1672,7 +1672,7 @@ class MessageHandler:
             log.debug(f"[SkinMonitor] Traceback: {traceback.format_exc()}")
 
     def _handle_request_category_mods(self, payload: dict) -> None:
-        """Return the list of mods for a specific top-level category under %LOCALAPPDATA%\\Rose\\mods."""
+        """Return the list of mods for a specific top-level category under %LOCALAPPDATA%\\Coral\\mods."""
         if not self.mod_storage:
             return
 

@@ -193,7 +193,7 @@ class OverlayManager:
                 "error",
                 "Injection failed while preparing the overlay.",
                 details={"error": str(e)},
-                hint="Check Rose logs for details, then retry.",
+                hint="Check Coral logs for details, then retry.",
             )
             return 1
 

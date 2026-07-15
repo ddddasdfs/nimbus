@@ -1,10 +1,14 @@
 """
-Native Win32 startup dialog used to prepare Rose before launching.
+Native Win32 startup dialog used to prepare Coral before launching.
 
 This replaces the former PyQt-based launcher with a lightweight Steam-style
 progress window that:
-    1. Checks for application updates and applies them if needed.
-    2. Verifies local skin data and downloads missing content.
+    1. Verifies local skin data and downloads missing content.
+
+Coral note: the upstream auto-update step (check GitHub, download and execute a
+release ZIP as admin without verification) has been removed. Startup now only
+runs the local hash check and skin sync; it never contacts an update server or
+executes downloaded code.
 
 Once all checks succeed, the dialog closes automatically and the main
 application continues bootstrapping.
@@ -12,11 +16,9 @@ application continues bootstrapping.
 
 from __future__ import annotations
 
-import os
 import sys
 import threading
 import time
-from typing import Callable
 
 from utils.core.logging import get_logger, get_named_logger
 from utils.system.win32_base import (
@@ -26,7 +28,6 @@ from utils.system.win32_base import (
 )
 
 from ..ui.update_dialog import UpdateDialog
-from ..update.update_sequence import UpdateSequence
 from ..sequences.hash_check_sequence import HashCheckSequence
 from ..sequences.skin_sync_sequence import SkinSyncSequence
 
@@ -44,79 +45,13 @@ def _show_error(message: str) -> None:
         user32.MessageBoxW(
             None,
             message,
-            "Rose - Launcher",
+            "Coral - Launcher",
             MB_OK | MB_ICONERROR | MB_TOPMOST,
         )
         updater_log.error(f"Error dialog shown to user: {message}")
     except Exception:
         print(f"[Launcher] ERROR: {message}")
         updater_log.exception("Failed to show error dialog", exc_info=True)
-
-
-def _with_ui_updates(dialog: UpdateDialog) -> tuple[Callable[[str], None], Callable[[int], None]]:
-    """Create UI update callbacks for dialog"""
-    def update_status(message: str) -> None:
-        dialog.set_status(message)
-        dialog.pump_messages()
-        updater_log.info(f"UI status update: {message}")
-
-    def update_progress(value: int) -> None:
-        dialog.set_progress(value)
-        dialog.pump_messages()
-        updater_log.debug(f"UI progress update: {value}%")
-
-    return update_status, update_progress
-
-
-def _perform_update(dialog: UpdateDialog, dev_mode: bool = False) -> bool:
-    """Perform update check and installation
-    
-    Args:
-        dialog: UpdateDialog instance for UI updates
-        dev_mode: If True, skip update check (for development)
-    """
-    updater_log.info("Starting update check sequence.")
-    dialog.clear_transfer_text()
-    dialog.set_detail("Checking for updates…")
-    dialog.set_status("Contacting update server…")
-    dialog.set_marquee(True)
-    dialog.pump_messages()
-
-    status_cb, progress_cb = _with_ui_updates(dialog)
-    try:
-        sequence = UpdateSequence()
-        updated = sequence.perform_update(
-            status_cb,
-            lambda _: None,
-            bytes_callback=lambda downloaded, total: dialog.update_transfer_progress(downloaded, total),
-            dev_mode=dev_mode,
-        )
-        updater_log.info(f"Auto-update completed. Update installed: {updated}")
-    except Exception as exc:  # noqa: BLE001
-        log.error(f"Auto-update failed: {exc}")
-        dialog.set_status(f"Update failed: {exc}")
-        dialog.set_marquee(False)
-        dialog.reset_progress()
-        dialog.clear_transfer_text()
-        dialog.pump_messages()
-        updater_log.exception("Auto-update raised an exception", exc_info=True)
-        return False
-
-    if updated:
-        dialog.set_status("Update installed. Restarting…")
-        dialog.set_progress(100)
-        dialog.pump_messages()
-        time.sleep(1.0)
-        # auto_update already launched the new process via batch file; exit current one
-        updater_log.info("Update applied successfully; exiting for restart.")
-        os._exit(0)
-
-    dialog.set_marquee(False)
-    dialog.reset_progress()
-    dialog.clear_transfer_text()
-    dialog.pump_messages()
-    updater_log.info("No update applied; continuing startup.")
-    return False
 
 
 def run_launcher(dev_mode: bool = False, test_download_fail: bool = False) -> None:
@@ -142,8 +77,7 @@ def run_launcher(dev_mode: bool = False, test_download_fail: bool = False) -> No
 
         def worker():
             try:
-                _perform_update(dialog, dev_mode=dev_mode)
-
+                # Coral: auto-update step removed. Proceed straight to local checks.
                 hash_sequence = HashCheckSequence()
                 hash_sequence.perform_hash_check(dialog, dev_mode=dev_mode)
                 
@@ -151,7 +85,7 @@ def run_launcher(dev_mode: bool = False, test_download_fail: bool = False) -> No
                 skin_sequence.perform_skin_sync(dialog, test_fail=test_download_fail)
 
                 dialog.set_detail("All checks complete.")
-                dialog.set_status("Launching Rose…")
+                dialog.set_status("Launching Coral…")
                 dialog.set_progress(100)
                 dialog.pump_messages()
                 time.sleep(0.4)
@@ -162,7 +96,7 @@ def run_launcher(dev_mode: bool = False, test_download_fail: bool = False) -> No
             except Exception as exc:  # noqa: BLE001
                 result["error"] = exc
                 log.error(f"Launcher error: {exc}", exc_info=True)
-                _show_error(f"Failed to prepare Rose:\n\n{exc}")
+                _show_error(f"Failed to prepare Coral:\n\n{exc}")
                 updater_log.exception("Launcher sequence crashed", exc_info=True)
             finally:
                 dialog.allow_close()

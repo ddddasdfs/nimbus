@@ -27,9 +27,18 @@ def initialize_core_components(args, injection_threshold: Optional[float] = None
         Tuple of (lcu, skin_scraper, state, injection_manager)
     """
     set_config_option("General", "installed_version", APP_VERSION)
-    
-    # Check for admin rights FIRST (required for injection to work)
-    ensure_admin_rights()
+
+    # Admin is optional in Coral. It is only needed to suspend the game process
+    # during injection (a reliability aid). ensure_admin_rights() offers elevation
+    # but no longer forces it — if declined, we continue in a limited mode.
+    running_as_admin = ensure_admin_rights()
+    if running_as_admin:
+        log.info("Running with administrator rights.")
+    else:
+        log.warning(
+            "Running WITHOUT administrator rights (limited mode): game-process "
+            "suspension is unavailable, so skin injection may be less reliable."
+        )
 
     # Ensure mods directory layout exists early (and clean unknown root categories)
     try:
@@ -65,8 +74,8 @@ def initialize_core_components(args, injection_threshold: Optional[float] = None
             try:
                 ctypes.windll.user32.MessageBoxW(
                     0,
-                    f"Rose failed to initialize:\n\n{str(e)}\n\nCheck the log file for details:\n{log.handlers[0].baseFilename if log.handlers else 'N/A'}",
-                    "Rose - Initialization Error",
+                    f"Coral failed to initialize:\n\n{str(e)}\n\nCheck the log file for details:\n{log.handlers[0].baseFilename if log.handlers else 'N/A'}",
+                    "Coral - Initialization Error",
                     0x50010  # MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST
                 )
             except Exception:
@@ -105,8 +114,8 @@ def initialize_core_components(args, injection_threshold: Optional[float] = None
             try:
                 ctypes.windll.user32.MessageBoxW(
                     0,
-                    f"Rose failed to initialize injection system:\n\n{str(e)}\n\nCheck the log file for details:\n{log.handlers[0].baseFilename if log.handlers else 'N/A'}",
-                    "Rose - Injection Error",
+                    f"Coral failed to initialize injection system:\n\n{str(e)}\n\nCheck the log file for details:\n{log.handlers[0].baseFilename if log.handlers else 'N/A'}",
+                    "Coral - Injection Error",
                     0x50010  # MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST
                 )
             except Exception:

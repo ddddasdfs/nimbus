@@ -1,2 +1,2 @@
-# Rose - Modular Skin Injector
+# Coral - Modular Skin Injector
 # Main package initialization

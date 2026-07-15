@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Callable, Optional, Dict, List, Tuple
 from utils.core.logging import get_logger
 from utils.core.paths import get_skins_dir
+from utils.core.safe_extract import is_safe_path
 from config import APP_USER_AGENT, SKIN_DOWNLOAD_STREAM_TIMEOUT_S
 
 log = get_logger()
@@ -147,13 +148,27 @@ class RepoDownloader:
             return None
 
     def _resolve_local_path(self, repo_path: str) -> Optional[Path]:
-        """Map a repo-relative path (skins/... or resources/...) to a local path."""
+        """Map a repo-relative path (skins/... or resources/...) to a local path.
+
+        Coral: the resulting path is validated to stay inside its base directory.
+        A compromised/malicious repo listing containing '..' segments (e.g.
+        'skins/../../evil') would otherwise escape the skins/resources dirs; such
+        entries are rejected (return None) instead of being written.
+        """
         from utils.core.paths import get_user_data_dir
         if repo_path.startswith('skins/'):
-            return self.target_dir / repo_path[len('skins/'):]
+            base = self.target_dir
+            candidate = base / repo_path[len('skins/'):]
         elif repo_path.startswith('resources/'):
-            return get_user_data_dir() / "resources" / repo_path[len('resources/'):]
-        return None
+            base = get_user_data_dir() / "resources"
+            candidate = base / repo_path[len('resources/'):]
+        else:
+            return None
+
+        if not is_safe_path(base, candidate):
+            log.error(f"[SECURITY] Blocked unsafe repo path outside base dir: {repo_path}")
+            return None
+        return candidate
 
     def download_changed_files(self, changed_files: List[Dict]) -> bool:
         """Download changed files individually via raw.githubusercontent.com.
@@ -541,13 +556,22 @@ class RepoDownloader:
                         if entry_type == "skin":
                             if relative_path.startswith('skins/'):
                                 relative_path = relative_path.replace('skins/', '', 1)
-                            extract_path = self.target_dir / relative_path
+                            extract_base = self.target_dir
+                            extract_path = extract_base / relative_path
                         else:
                             # Extract entire resources folder structure, removing 'resources/' prefix
                             # so it becomes the resources folder
                             if relative_path.startswith('resources/'):
                                 relative_path = relative_path.replace('resources/', '', 1)
-                            extract_path = mapping_target_dir / relative_path
+                            extract_base = mapping_target_dir
+                            extract_path = extract_base / relative_path
+
+                        # Coral: zip-slip guard. Reject any archive entry whose
+                        # resolved path would land outside its intended base dir
+                        # (e.g. a malicious '../../' entry from a compromised repo).
+                        if not is_safe_path(extract_base, extract_path):
+                            log.error(f"[SECURITY] Blocked unsafe zip entry: {file_info.filename}")
+                            continue
 
                         extract_path.parent.mkdir(parents=True, exist_ok=True)
 

@@ -16,6 +16,7 @@ import ctypes
 import subprocess
 from pathlib import Path
 from utils.core.logging import get_logger
+from config import get_config_option
 
 log = get_logger()
 
@@ -33,55 +34,59 @@ def request_admin_elevation():
     """
     Request administrator privileges by re-launching the application with elevation.
     This will show the UAC prompt.
-    
+
+    If the user accepts, an elevated instance is launched and the current
+    (non-elevated) process exits. If the user declines the UAC prompt or
+    elevation otherwise fails, this returns False WITHOUT exiting, so the caller
+    can decide to continue unelevated.
+
     Returns:
-        bool: True if elevation was attempted (process will exit), False if already admin
+        bool: False if already admin or elevation was declined/failed. On success
+              the process exits and does not return.
     """
     if is_admin():
         return False
-    
+
     # Get the path to the current executable or script
     if getattr(sys, 'frozen', False):
         # Running as compiled executable
         exe_path = sys.executable
+        script_path = None
     else:
         # Running as Python script
         exe_path = sys.executable
         script_path = Path(sys.argv[0]).resolve()
-    
+
     # Build the command line arguments
     params = ' '.join([f'"{arg}"' if ' ' in arg else arg for arg in sys.argv[1:]])
-    
+    if script_path is not None:
+        params = f'"{script_path}" {params}'
+
     try:
-        # Request elevation via ShellExecute with 'runas' verb
-        if getattr(sys, 'frozen', False):
-            # For compiled executable
-            ctypes.windll.shell32.ShellExecuteW(
-                None,
-                "runas",
-                exe_path,
-                params,
-                None,
-                1  # SW_SHOWNORMAL
-            )
-        else:
-            # For Python script
-            ctypes.windll.shell32.ShellExecuteW(
-                None,
-                "runas",
-                exe_path,
-                f'"{script_path}" {params}',
-                None,
-                1  # SW_SHOWNORMAL
-            )
-        
-        # Exit the current non-elevated process
-        sys.exit(0)
+        # Request elevation via ShellExecute with 'runas' verb.
+        # ShellExecuteW returns a value > 32 on success; <= 32 indicates an
+        # error, including 1223 (ERROR_CANCELLED) when the user declines UAC.
+        ret = ctypes.windll.shell32.ShellExecuteW(
+            None,
+            "runas",
+            exe_path,
+            params,
+            None,
+            1,  # SW_SHOWNORMAL
+        )
     except Exception as e:
         log.error(f"Failed to request elevation: {e}")
         return False
-    
-    return True
+
+    if int(ret) > 32:
+        # Elevated instance launched successfully; quit this non-elevated one.
+        sys.exit(0)
+
+    log.warning(
+        "Administrator elevation was declined or failed (ShellExecute code %s); "
+        "continuing without admin.", ret
+    )
+    return False
 
 
 def is_registered_for_autostart():
@@ -93,7 +98,7 @@ def is_registered_for_autostart():
     """
     try:
         result = subprocess.run(
-            ['schtasks', '/Query', '/TN', 'Rose'],
+            ['schtasks', '/Query', '/TN', 'Coral'],
             capture_output=True,
             text=True,
             creationflags=subprocess.CREATE_NO_WINDOW
@@ -132,7 +137,7 @@ def register_autostart():
         cmd = [
             'schtasks',
             '/Create',
-            '/TN', 'Rose',  # Task name
+            '/TN', 'Coral',  # Task name
             '/TR', f'"{exe_path}"',  # Task to run
             '/SC', 'ONLOGON',  # Trigger: On user logon
             '/RL', 'HIGHEST',  # Run with highest privileges (admin)
@@ -174,7 +179,7 @@ def unregister_autostart():
         cmd = [
             'schtasks',
             '/Delete',
-            '/TN', 'Rose',  # Task name
+            '/TN', 'Coral',  # Task name
             '/F'  # Force delete without confirmation
         ]
         
@@ -225,12 +230,14 @@ def show_message_box_threaded(message: str, title: str, flags: int = 0x40):
 
 
 def show_admin_required_dialog():
-    """Show a dialog box explaining that admin rights are required"""
+    """Show a dialog box explaining how admin rights are used (optional)."""
     show_message_box_threaded(
-        "Rose requires Administrator privileges to function properly.\n\n"
-        "The application will now request elevation.\n\n"
-        "Click 'Yes' on the UAC prompt to continue.",
-        "Administrator Rights Required",
+        "Coral works best with Administrator privileges: they let it suspend the "
+        "game process during injection, which makes skin injection more reliable.\n\n"
+        "Coral will now request elevation. You may click 'Yes' to grant it, or "
+        "'No' to continue without admin (injection may be less reliable).\n\n"
+        "To stop being asked, set request_admin=false under [General] in config.ini.",
+        "Administrator Rights (optional)",
         0x30  # MB_ICONWARNING
     )
 
@@ -238,7 +245,7 @@ def show_admin_required_dialog():
 def show_autostart_success_dialog():
     """Show a dialog box confirming auto-start registration"""
     show_message_box_threaded(
-        "Rose will now start automatically when turn on your computer.",
+        "Coral will now start automatically when turn on your computer.",
         "Auto-Start Enabled",
         0x40  # MB_ICONINFORMATION
     )
@@ -247,7 +254,7 @@ def show_autostart_success_dialog():
 def show_autostart_removed_dialog():
     """Show a dialog box confirming auto-start removal"""
     show_message_box_threaded(
-        "Rose has been removed from auto-start.\n\n"
+        "Coral has been removed from auto-start.\n\n"
         "The application will no longer start automatically with Windows.\n\n"
         "You can re-enable auto-start from the settings menu.",
         "Auto-Start Removed",
@@ -255,15 +262,44 @@ def show_autostart_removed_dialog():
     )
 
 
-def ensure_admin_rights():
+def ensure_admin_rights() -> bool:
     """
-    Ensure the application is running with admin rights.
-    If not, request elevation and exit.
-    
-    This should be called at the very start of the application.
+    Try to run with admin rights, but do NOT require them.
+
+    Coral only needs admin for one thing: suspending the game process during
+    injection (which improves injection reliability). Rather than forcing the
+    whole session to run elevated and quitting if the user declines, Coral now
+    treats admin as optional:
+
+      * If already elevated, returns True.
+      * Otherwise, unless disabled via config ([General] request_admin=false),
+        it offers a UAC elevation prompt. Accepting relaunches elevated (this
+        process exits inside request_admin_elevation). Declining is fine — the
+        app continues unelevated in a limited mode.
+
+    Returns:
+        bool: True if running with admin rights, False if continuing unelevated.
     """
-    if not is_admin():
-        show_admin_required_dialog()
-        request_admin_elevation()
-        # If we reach here, elevation failed or was cancelled
-        sys.exit(1)
+    if is_admin():
+        return True
+
+    # Allow users to opt out of the elevation prompt entirely.
+    request_admin = (get_config_option("General", "request_admin", "true") or "true").strip().lower()
+    if request_admin in ("0", "false", "no", "off"):
+        log.warning(
+            "Admin elevation is disabled via config ([General] request_admin). "
+            "Running without administrator rights; game-process suspension during "
+            "injection will be unavailable, which may make injection less reliable."
+        )
+        return False
+
+    show_admin_required_dialog()
+    request_admin_elevation()  # exits this process if the user accepts UAC
+
+    # Reaching here means elevation was declined or failed. Continue unelevated.
+    log.warning(
+        "Continuing without administrator rights. Skin injection may be less "
+        "reliable because Coral cannot suspend the game process during injection. "
+        "Run Coral as administrator (or set [General] request_admin=true) to enable it."
+    )
+    return False

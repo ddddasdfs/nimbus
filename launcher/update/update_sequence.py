@@ -1,15 +1,15 @@
 """
-Update Sequence — DISABLED in Coral.
+Update Sequence — DISABLED in 2SDAY.
 
-Upstream Coral's auto-updater downloaded the latest GitHub release ZIP and
+Upstream 2SDAY's auto-updater downloaded the latest GitHub release ZIP and
 executed it with NO signature or hash verification, with no user consent, while
 the application was running as administrator. A compromise of the upstream
 GitHub account (or a malicious release) would therefore have meant silent,
 admin-level arbitrary code execution on every user's machine at next launch.
 
-Coral removes that download-and-execute path entirely. This module is kept only
+2SDAY removes that download-and-execute path entirely. This module is kept only
 so existing imports keep resolving; `perform_update` performs no network access
-and never downloads or runs anything. Update Coral by re-downloading a build
+and never downloads or runs anything. Update 2SDAY by re-downloading a build
 from a source you trust and verifying it yourself.
 """
 
@@ -23,7 +23,7 @@ log = get_logger()
 
 
 class UpdateSequence:
-    """No-op update sequence. Auto-update was removed in Coral for security."""
+    """No-op update sequence. Auto-update was removed in 2SDAY for security."""
 
     def perform_update(
         self,
@@ -32,8 +32,8 @@ class UpdateSequence:
         bytes_callback: Optional[Callable[[int, Optional[int]], None]] = None,
         dev_mode: bool = False,
     ) -> bool:
-        """Do nothing. Auto-update is intentionally disabled in Coral."""
-        log.info("Auto-update is disabled in Coral; skipping update check.")
+        """Do nothing. Auto-update is intentionally disabled in 2SDAY."""
+        log.info("Auto-update is disabled in 2SDAY; skipping update check.")
         try:
             status_callback("Auto-update disabled")
         except Exception:

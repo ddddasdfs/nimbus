@@ -1,7 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 
 /**
- * Coral Party Room - Durable Object
+ * 2SDAY Party Room - Durable Object
  *
  * Shared room where party members broadcast their skin selections.
  * All messages are JSON, broadcast to everyone else in the room.

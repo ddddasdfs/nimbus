@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Main entry point for Coral (delegates to main package)
+Main entry point for 2SDAY (delegates to main package)
 """
 
 import sys

@@ -1,10 +1,10 @@
-# 🪸 Coral - Effortless Skin Changer for LoL
+# 2SDAY - Effortless Skin Changer for LoL
 
 <div align="center">
 
-  <img src="./assets/icon.png" alt="Coral Icon" width="128" height="128">
+  <img src="./assets/icon.png" alt="2SDAY Icon" width="128" height="128">
 
-[![Installer](https://img.shields.io/badge/Installer-Windows-32A832)](https://github.com/ddddasdfs/Coral/releases/latest) [![License](https://img.shields.io/badge/License-MIT-C03030)](LICENSE) [![Downloads](https://img.shields.io/github/downloads/ddddasdfs/Coral/total?color=32A832&label=Downloads)](https://github.com/ddddasdfs/Coral/releases/latest)
+[![Installer](https://img.shields.io/badge/Installer-Windows-32A832)](https://github.com/ddddasdfs/2SDAY/releases/latest) [![License](https://img.shields.io/badge/License-MIT-C03030)](LICENSE) [![Downloads](https://img.shields.io/github/downloads/ddddasdfs/2SDAY/total?color=32A832&label=Downloads)](https://github.com/ddddasdfs/2SDAY/releases/latest)
 
 
 </div>
@@ -13,24 +13,24 @@
 
 ## About this fork
 
-**Coral is a security-hardened fork of [Rose](https://github.com/Alban1911/Rose) by Alban1911 and FlorentTariolle** (MIT-licensed). It keeps Rose's skin-changing functionality but removes or disables the components that reach outside the machine, so the app does only what a skin changer needs to. Relative to upstream Rose, this fork:
+**2SDAY is a security-hardened fork of [Rose](https://github.com/Alban1911/Rose) by Alban1911 and FlorentTariolle** (MIT-licensed). It keeps Rose's skin-changing functionality but removes or disables the components that reach outside the machine, so the app does only what a skin changer needs to. Relative to upstream Rose, this fork:
 
-- **Removes analytics/telemetry entirely** — upstream sent a machine identifier to an external server every few minutes; Coral sends no usage data of any kind.
-- **Removes the auto-updater's download-and-execute path** — upstream downloaded and ran GitHub releases as administrator with no signature/hash check; Coral never downloads or runs update code.
+- **Removes analytics/telemetry entirely** — upstream sent a machine identifier to an external server every few minutes; 2SDAY sends no usage data of any kind.
+- **Removes the auto-updater's download-and-execute path** — upstream downloaded and ran GitHub releases as administrator with no signature/hash check; 2SDAY never downloads or runs update code.
 - **Hard-disables party mode networking** — no connection to any relay is made and no data leaves the machine.
-- **Deletes the CORAL-Jade plugin** — it loaded remote JavaScript from a third-party CDN at runtime.
+- **Deletes the 2SDAY-Jade plugin** — it loaded remote JavaScript from a third-party CDN at runtime.
 - **Hardens skin extraction** against path-traversal (zip-slip).
-- **Makes administrator rights optional** — upstream forced the whole session to run elevated and quit if you declined. Coral only uses admin to suspend the game process during injection (a reliability aid); decline the UAC prompt to run unelevated in a limited mode, or set `request_admin=false` under `[General]` in `config.ini` to stop being asked.
+- **Makes administrator rights optional** — upstream forced the whole session to run elevated and quit if you declined. 2SDAY only uses admin to suspend the game process during injection (a reliability aid); decline the UAC prompt to run unelevated in a limited mode, or set `request_admin=false` under `[General]` in `config.ini` to stop being asked.
 
 ## Overview
 
-Coral is an open-source automatic skin changer for League of Legends that enables seamless access to all skins in the game. The application runs silently in the system tray and automatically detects skin selections during champion select, injecting the chosen skin when the game loads.
+2SDAY is an open-source automatic skin changer for League of Legends that enables seamless access to all skins in the game. The application runs silently in the system tray and automatically detects skin selections during champion select, injecting the chosen skin when the game loads.
 
-Built on the [Pengu Loader](https://github.com/PenguLoader/PenguLoader) framework, Coral integrates JavaScript extensions into the League Client to enable modular UI interactions. It strictly modifies local rendering variables to display custom models and textures. It is designed purely as an exploration of client-side asset management, providing no manipulation of network data, memory states, or gameplay mechanics, thereby **offering zero competitive advantage**.
+Built on the [Pengu Loader](https://github.com/PenguLoader/PenguLoader) framework, 2SDAY integrates JavaScript extensions into the League Client to enable modular UI interactions. It strictly modifies local rendering variables to display custom models and textures. It is designed purely as an exploration of client-side asset management, providing no manipulation of network data, memory states, or gameplay mechanics, thereby **offering zero competitive advantage**.
 
 ## Architecture
 
-Coral consists of three main components:
+2SDAY consists of three main components:
 
 ### Python Backend
 
@@ -40,34 +40,34 @@ Coral consists of three main components:
 - **Skin Management**: Downloads and manages skin files from the [LeagueSkins repository](https://github.com/Alban1911/LeagueSkins)
 - **Party Mode** *(disabled in this fork)*: Upstream enabled skin sharing between friends via a Cloudflare WebSocket relay. The code is retained but hard-disabled — no relay connection is ever made.
 - **Game Monitoring**: Tracks game state, champion select phases, and loadout countdowns
-- ~~**Auto-Updater**~~: *Removed in Coral.* Update by downloading a build you trust and verifying it yourself.
-- ~~**Analytics**~~: *Removed in Coral.* No usage data is collected or sent.
+- ~~**Auto-Updater**~~: *Removed in 2SDAY.* Update by downloading a build you trust and verifying it yourself.
+- ~~**Analytics**~~: *Removed in 2SDAY.* No usage data is collected or sent.
 
 ### Cloudflare Workers
 
-- **coral-party-relay** *(unused in this fork)*: The source for the Durable Object-backed WebSocket relay is kept for reference, but party networking is disabled, so Coral never connects to it.
+- **2sday-party-relay** *(unused in this fork)*: The source for the Durable Object-backed WebSocket relay is kept for reference, but party networking is disabled, so 2SDAY never connects to it.
 
 ### Pengu Loader Plugins
 
-Coral includes a suite of JavaScript plugins that extend the League Client UI:
+2SDAY includes a suite of JavaScript plugins that extend the League Client UI:
 
-- **CORAL-UI**: Unlocks locked skin previews in champion select, enabling hover interactions on all skins
-- **CORAL-SkinMonitor**: Monitors currently selected skin's name and sends it to the Python backend via WebSocket
-- **CORAL-CustomWheel**: Displays custom mod metadata for hovered skins and exposes quick access to the mods folder
-- **CORAL-ChromaWheel**: Enhanced chroma selection interface for choosing any chroma variant
-- **CORAL-FormsWheel**: Custom form selection interface for skins with multiple forms (Elementalist Lux, Sahn Uzal Mordekaiser, Spirit Blossom Morgana, Radiant Sett)
-- **CORAL-SettingsPanel**: Settings panel accessible from the League of Legends Client
-- **CORAL-RandomSkin**: Random skin selection feature
-- **CORAL-HistoricMode**: Access to the last used skin for every champion
-- **CORAL-PartyMode**: Party mode UI panel *(party networking is disabled in this fork; the toggle reports party mode as unavailable)*
+- **2SDAY-UI**: Unlocks locked skin previews in champion select, enabling hover interactions on all skins
+- **2SDAY-SkinMonitor**: Monitors currently selected skin's name and sends it to the Python backend via WebSocket
+- **2SDAY-CustomWheel**: Displays custom mod metadata for hovered skins and exposes quick access to the mods folder
+- **2SDAY-ChromaWheel**: Enhanced chroma selection interface for choosing any chroma variant
+- **2SDAY-FormsWheel**: Custom form selection interface for skins with multiple forms (Elementalist Lux, Sahn Uzal Mordekaiser, Spirit Blossom Morgana, Radiant Sett)
+- **2SDAY-SettingsPanel**: Settings panel accessible from the League of Legends Client
+- **2SDAY-RandomSkin**: Random skin selection feature
+- **2SDAY-HistoricMode**: Access to the last used skin for every champion
+- **2SDAY-PartyMode**: Party mode UI panel *(party networking is disabled in this fork; the toggle reports party mode as unavailable)*
 
 ## How It Works
 
-1. **League Client Integration**: Coral activates **[Pengu Loader](https://github.com/PenguLoader/PenguLoader)** on startup, which injects the JavaScript plugins into the League Client
-2. **Skin Detection**: When you hover over a skin in champion select, `CORAL-SkinMonitor` detects the selection and sends it to the Python backend
+1. **League Client Integration**: 2SDAY activates **[Pengu Loader](https://github.com/PenguLoader/PenguLoader)** on startup, which injects the JavaScript plugins into the League Client
+2. **Skin Detection**: When you hover over a skin in champion select, `2SDAY-SkinMonitor` detects the selection and sends it to the Python backend
 3. **Game Opening Delay**: To make sure the injection has time to occur we suspend League of Legend's game process as long as the overlay is not ran
-4. **Game Injection**: Coral injects the selected skin when the game starts
-5. **Seamless Experience**: The skin loads as if you owned it, with full chroma support and no gameplay impact (Coral will **never** provide any competitive advantage to its users)
+4. **Game Injection**: 2SDAY injects the selected skin when the game starts
+5. **Seamless Experience**: The skin loads as if you owned it, with full chroma support and no gameplay impact (2SDAY will **never** provide any competitive advantage to its users)
 
 ## Features
 
@@ -84,15 +84,15 @@ Coral includes a suite of JavaScript plugins that extend the League Client UI:
 
 ### DLL Requirement
 
-Due to DMCA restrictions, Coral cannot distribute the injection DLL file. You must obtain this file yourself from an authorized source and sign it with your own code signing certificate.
+Due to DMCA restrictions, 2SDAY cannot distribute the injection DLL file. You must obtain this file yourself from an authorized source and sign it with your own code signing certificate.
 
-On first launch, Coral will prompt you to provide this file and open the folder where it should be placed.
+On first launch, 2SDAY will prompt you to provide this file and open the folder where it should be placed.
 
 ## Installation
 
-1. Download the latest installer from [Releases](https://github.com/ddddasdfs/Coral/releases/latest)
+1. Download the latest installer from [Releases](https://github.com/ddddasdfs/2SDAY/releases/latest)
 2. Run the installer as Administrator
-3. Launch Coral from the Start Menu or desktop shortcut
+3. Launch 2SDAY from the Start Menu or desktop shortcut
 
 ## Contributing
 
@@ -106,4 +106,4 @@ Custom skins are allowed under Riot's terms of service and are not detected. Do 
 
 ---
 
-**Coral** - _League, unlocked._
+**2SDAY** - _League, unlocked._

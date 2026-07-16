@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Path utilities for Coral
+Path utilities for 2SDAY
 Handles user data directories and permissions
 """
 
@@ -18,7 +18,7 @@ def _get_desktop_user_info() -> Tuple[Optional[str], Optional[str]]:
     """
     Get the actual desktop user's username and profile path.
     This finds the user who is logged into the desktop session,
-    even if Coral is running elevated as a different admin account.
+    even if 2SDAY is running elevated as a different admin account.
 
     Returns:
         Tuple of (username, profile_path) or (None, None) if detection fails
@@ -139,13 +139,13 @@ def get_user_data_dir() -> Path:
     Get the user data directory where the application can write files.
 
     IMPORTANT: This function detects the actual desktop user, not the elevated
-    admin account. This ensures that Coral's data directory matches what Pengu
+    admin account. This ensures that 2SDAY's data directory matches what Pengu
     Loader (running in League's process) will use.
 
     This handles the case where:
     - User "daish" is logged into Windows
-    - User runs Coral as "Admin" (different admin account)
-    - Coral needs to use daish's AppData, not Admin's AppData
+    - User runs 2SDAY as "Admin" (different admin account)
+    - 2SDAY needs to use daish's AppData, not Admin's AppData
     """
     global _cached_user_data_dir
 
@@ -154,7 +154,7 @@ def get_user_data_dir() -> Path:
 
     if os.name == "nt":  # Windows
         # First, try to detect the actual desktop user
-        # This handles the case where Coral runs as a different admin account
+        # This handles the case where 2SDAY runs as a different admin account
         desktop_username, desktop_profile = _get_desktop_user_info()
 
         current_username = os.environ.get("USERNAME", "").lower()
@@ -165,7 +165,7 @@ def get_user_data_dir() -> Path:
                 # User mismatch detected! Use the desktop user's AppData
                 desktop_localappdata = _get_localappdata_for_user(desktop_profile)
                 if desktop_localappdata:
-                    _cached_user_data_dir = desktop_localappdata / "Coral"
+                    _cached_user_data_dir = desktop_localappdata / "2SDAY"
                     # Ensure the directory exists with proper permissions
                     try:
                         _cached_user_data_dir.mkdir(parents=True, exist_ok=True)
@@ -176,13 +176,13 @@ def get_user_data_dir() -> Path:
         # No mismatch or detection failed - use current user's LOCALAPPDATA
         localappdata = os.environ.get("LOCALAPPDATA")
         if localappdata:
-            _cached_user_data_dir = Path(localappdata) / "Coral"
+            _cached_user_data_dir = Path(localappdata) / "2SDAY"
             return _cached_user_data_dir
 
         # Fallback to user profile
         userprofile = os.environ.get("USERPROFILE")
         if userprofile:
-            _cached_user_data_dir = Path(userprofile) / "AppData" / "Local" / "Coral"
+            _cached_user_data_dir = Path(userprofile) / "AppData" / "Local" / "2SDAY"
             return _cached_user_data_dir
 
         # Last resort: current directory
@@ -193,15 +193,15 @@ def get_user_data_dir() -> Path:
         # Use XDG_DATA_HOME or fallback to ~/.local/share
         xdg_data_home = os.environ.get("XDG_DATA_HOME")
         if xdg_data_home:
-            _cached_user_data_dir = Path(xdg_data_home) / "Coral"
+            _cached_user_data_dir = Path(xdg_data_home) / "2SDAY"
         else:
-            _cached_user_data_dir = Path.home() / ".local" / "share" / "Coral"
+            _cached_user_data_dir = Path.home() / ".local" / "share" / "2SDAY"
         return _cached_user_data_dir
 
 
 def get_appdata_dir() -> Path:
     """
-    Get the Coral AppData directory.
+    Get the 2SDAY AppData directory.
     Alias for get_user_data_dir() for backwards compatibility.
     """
     return get_user_data_dir()

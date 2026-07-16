@@ -10,7 +10,7 @@ from .core.launcher import run_launcher
 from .updater import auto_update
 
 # Re-export subpackage classes for convenience
-# Coral note: the auto-updater (UpdateDownloader/UpdateInstaller/GitHubClient)
+# 2SDAY note: the auto-updater (UpdateDownloader/UpdateInstaller/GitHubClient)
 # was removed for security. UpdateSequence remains only as a no-op stub.
 from .update.update_sequence import UpdateSequence
 from .ui.update_dialog import UpdateDialog

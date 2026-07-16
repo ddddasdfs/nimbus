@@ -1,4 +1,4 @@
-# Contributing to Coral
+# Contributing to 2SDAY
 
 Contributions are welcome! Report bugs or suggest features via GitHub Issues, or submit pull requests.
 
@@ -6,16 +6,16 @@ Contributions are welcome! Report bugs or suggest features via GitHub Issues, or
 
 ```powershell
 # Create conda environment with Python 3.11
-conda create -n coral python=3.11 -y
+conda create -n 2sday python=3.11 -y
 
 # Activate the environment
-conda activate coral
+conda activate 2sday
 
 # Clone the repository
-git clone https://github.com/ddddasdfs/Coral.git
+git clone https://github.com/ddddasdfs/2SDAY.git
 
 # Navigate to project directory
-cd Coral
+cd 2SDAY
 
 # Create a feature branch (e.g. feat/skin-preview, fix/chroma-crash, docs/readme)
 git checkout -b feat/your-feature-name
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ## Project Structure
 
 ```
-Coral/
+2SDAY/
 ├── main.py                 # Application entry point
 ├── config.py               # Configuration constants
 ├── requirements.txt        # Python dependencies
@@ -181,7 +181,7 @@ Coral/
 │   ├── sequences/          # Launch sequences
 │   │   ├── hash_check_sequence.py
 │   │   └── skin_sync_sequence.py
-│   ├── update/             # Auto-updater REMOVED in Coral; only a no-op stub remains
+│   ├── update/             # Auto-updater REMOVED in 2SDAY; only a no-op stub remains
 │   │   └── update_sequence.py  # No-op (download/execute path + github_client deleted)
 │   ├── ui/
 │   │   └── update_dialog.py
@@ -213,18 +213,18 @@ Coral/
 │   │   └── room.ts         # Durable Object party room
 │   └── wrangler.toml
 │
-│   # NOTE: The upstream `analytics/` package was REMOVED in Coral — no telemetry.
+│   # NOTE: The upstream `analytics/` package was REMOVED in 2SDAY — no telemetry.
 │
 └── Pengu Loader/           # Pengu Loader and plugins
     ├── Pengu Loader.exe    # Pengu Loader executable
     └── plugins/            # JavaScript plugins
-        ├── CORAL-UI/
-        ├── CORAL-SkinMonitor/
-        ├── CORAL-ChromaWheel/
-        ├── CORAL-FormsWheel/
-        ├── CORAL-CustomWheel/
-        ├── CORAL-SettingsPanel/
-        ├── CORAL-RandomSkin/
-        ├── CORAL-HistoricMode/
-        └── CORAL-PartyMode/   # UI only; party networking disabled
+        ├── 2SDAY-UI/
+        ├── 2SDAY-SkinMonitor/
+        ├── 2SDAY-ChromaWheel/
+        ├── 2SDAY-FormsWheel/
+        ├── 2SDAY-CustomWheel/
+        ├── 2SDAY-SettingsPanel/
+        ├── 2SDAY-RandomSkin/
+        ├── 2SDAY-HistoricMode/
+        └── 2SDAY-PartyMode/   # UI only; party networking disabled
 ```

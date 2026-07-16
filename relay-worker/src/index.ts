@@ -10,7 +10,7 @@ export default {
 
     // Health check
     if (url.pathname === '/' && request.method === 'GET') {
-      return new Response(JSON.stringify({ status: 'ok', service: 'coral-party-relay' }), {
+      return new Response(JSON.stringify({ status: 'ok', service: '2sday-party-relay' }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -28,6 +28,6 @@ export default {
       return stub.fetch(request);
     }
 
-    return new Response('Coral Party Relay - WebSocket upgrade required', { status: 426 });
+    return new Response('2SDAY Party Relay - WebSocket upgrade required', { status: 426 });
   },
 };

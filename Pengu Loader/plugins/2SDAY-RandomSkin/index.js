@@ -1,17 +1,17 @@
 /**
- * @name Coral-RandomSkin
- * @author Coral Team
+ * @name 2SDAY-RandomSkin
+ * @author 2SDAY Team
  * @description Random skin for Pengu Loader
- * @link https://github.com/ddddasdfs/Coral
+ * @link https://github.com/ddddasdfs/2SDAY
  */
 (function initRandomSkin() {
-  const LOG_PREFIX = "[Coral-RandomSkin]";
+  const LOG_PREFIX = "[2SDAY-RandomSkin]";
   const REWARDS_SELECTOR = ".skin-selection-item-information.loyalty-reward-icon--rewards";
   const RANDOM_FLAG_ASSET_PATH = "random_flag.png";
   const DICE_DISABLED_ASSET_PATH = "dice-disabled.png";
   const DICE_ENABLED_ASSET_PATH = "dice-enabled.png";
 
-  // Shared bridge (provided by CORAL-SkinMonitor)
+  // Shared bridge (provided by 2SDAY-SkinMonitor)
   let bridge = null;
 
   function waitForBridge() {
@@ -20,7 +20,7 @@
       const interval = 50;
       let elapsed = 0;
       const check = () => {
-        if (window.__coralBridge) return resolve(window.__coralBridge);
+        if (window.__twosdayBridge) return resolve(window.__twosdayBridge);
         elapsed += interval;
         if (elapsed >= timeout) return reject(new Error("Bridge not available"));
         setTimeout(check, interval);

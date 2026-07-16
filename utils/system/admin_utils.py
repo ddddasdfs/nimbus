@@ -98,7 +98,7 @@ def is_registered_for_autostart():
     """
     try:
         result = subprocess.run(
-            ['schtasks', '/Query', '/TN', 'Coral'],
+            ['schtasks', '/Query', '/TN', '2SDAY'],
             capture_output=True,
             text=True,
             creationflags=subprocess.CREATE_NO_WINDOW
@@ -137,7 +137,7 @@ def register_autostart():
         cmd = [
             'schtasks',
             '/Create',
-            '/TN', 'Coral',  # Task name
+            '/TN', '2SDAY',  # Task name
             '/TR', f'"{exe_path}"',  # Task to run
             '/SC', 'ONLOGON',  # Trigger: On user logon
             '/RL', 'HIGHEST',  # Run with highest privileges (admin)
@@ -179,7 +179,7 @@ def unregister_autostart():
         cmd = [
             'schtasks',
             '/Delete',
-            '/TN', 'Coral',  # Task name
+            '/TN', '2SDAY',  # Task name
             '/F'  # Force delete without confirmation
         ]
         
@@ -232,9 +232,9 @@ def show_message_box_threaded(message: str, title: str, flags: int = 0x40):
 def show_admin_required_dialog():
     """Show a dialog box explaining how admin rights are used (optional)."""
     show_message_box_threaded(
-        "Coral works best with Administrator privileges: they let it suspend the "
+        "2SDAY works best with Administrator privileges: they let it suspend the "
         "game process during injection, which makes skin injection more reliable.\n\n"
-        "Coral will now request elevation. You may click 'Yes' to grant it, or "
+        "2SDAY will now request elevation. You may click 'Yes' to grant it, or "
         "'No' to continue without admin (injection may be less reliable).\n\n"
         "To stop being asked, set request_admin=false under [General] in config.ini.",
         "Administrator Rights (optional)",
@@ -245,7 +245,7 @@ def show_admin_required_dialog():
 def show_autostart_success_dialog():
     """Show a dialog box confirming auto-start registration"""
     show_message_box_threaded(
-        "Coral will now start automatically when turn on your computer.",
+        "2SDAY will now start automatically when turn on your computer.",
         "Auto-Start Enabled",
         0x40  # MB_ICONINFORMATION
     )
@@ -254,7 +254,7 @@ def show_autostart_success_dialog():
 def show_autostart_removed_dialog():
     """Show a dialog box confirming auto-start removal"""
     show_message_box_threaded(
-        "Coral has been removed from auto-start.\n\n"
+        "2SDAY has been removed from auto-start.\n\n"
         "The application will no longer start automatically with Windows.\n\n"
         "You can re-enable auto-start from the settings menu.",
         "Auto-Start Removed",
@@ -266,9 +266,9 @@ def ensure_admin_rights() -> bool:
     """
     Try to run with admin rights, but do NOT require them.
 
-    Coral only needs admin for one thing: suspending the game process during
+    2SDAY only needs admin for one thing: suspending the game process during
     injection (which improves injection reliability). Rather than forcing the
-    whole session to run elevated and quitting if the user declines, Coral now
+    whole session to run elevated and quitting if the user declines, 2SDAY now
     treats admin as optional:
 
       * If already elevated, returns True.
@@ -299,7 +299,7 @@ def ensure_admin_rights() -> bool:
     # Reaching here means elevation was declined or failed. Continue unelevated.
     log.warning(
         "Continuing without administrator rights. Skin injection may be less "
-        "reliable because Coral cannot suspend the game process during injection. "
-        "Run Coral as administrator (or set [General] request_admin=true) to enable it."
+        "reliable because 2SDAY cannot suspend the game process during injection. "
+        "Run 2SDAY as administrator (or set [General] request_admin=true) to enable it."
     )
     return False

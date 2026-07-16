@@ -150,7 +150,7 @@ class RepoDownloader:
     def _resolve_local_path(self, repo_path: str) -> Optional[Path]:
         """Map a repo-relative path (skins/... or resources/...) to a local path.
 
-        Coral: the resulting path is validated to stay inside its base directory.
+        2SDAY: the resulting path is validated to stay inside its base directory.
         A compromised/malicious repo listing containing '..' segments (e.g.
         'skins/../../evil') would otherwise escape the skins/resources dirs; such
         entries are rejected (return None) instead of being written.
@@ -566,7 +566,7 @@ class RepoDownloader:
                             extract_base = mapping_target_dir
                             extract_path = extract_base / relative_path
 
-                        # Coral: zip-slip guard. Reject any archive entry whose
+                        # 2SDAY: zip-slip guard. Reject any archive entry whose
                         # resolved path would land outside its intended base dir
                         # (e.g. a malicious '../../' entry from a compromised repo).
                         if not is_safe_path(extract_base, extract_path):

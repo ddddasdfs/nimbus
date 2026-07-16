@@ -1,11 +1,11 @@
 """
-Native Win32 startup dialog used to prepare Coral before launching.
+Native Win32 startup dialog used to prepare 2SDAY before launching.
 
 This replaces the former PyQt-based launcher with a lightweight Steam-style
 progress window that:
     1. Verifies local skin data and downloads missing content.
 
-Coral note: the upstream auto-update step (check GitHub, download and execute a
+2SDAY note: the upstream auto-update step (check GitHub, download and execute a
 release ZIP as admin without verification) has been removed. Startup now only
 runs the local hash check and skin sync; it never contacts an update server or
 executes downloaded code.
@@ -45,7 +45,7 @@ def _show_error(message: str) -> None:
         user32.MessageBoxW(
             None,
             message,
-            "Coral - Launcher",
+            "2SDAY - Launcher",
             MB_OK | MB_ICONERROR | MB_TOPMOST,
         )
         updater_log.error(f"Error dialog shown to user: {message}")
@@ -77,7 +77,7 @@ def run_launcher(dev_mode: bool = False, test_download_fail: bool = False) -> No
 
         def worker():
             try:
-                # Coral: auto-update step removed. Proceed straight to local checks.
+                # 2SDAY: auto-update step removed. Proceed straight to local checks.
                 hash_sequence = HashCheckSequence()
                 hash_sequence.perform_hash_check(dialog, dev_mode=dev_mode)
                 
@@ -85,7 +85,7 @@ def run_launcher(dev_mode: bool = False, test_download_fail: bool = False) -> No
                 skin_sequence.perform_skin_sync(dialog, test_fail=test_download_fail)
 
                 dialog.set_detail("All checks complete.")
-                dialog.set_status("Launching Coral…")
+                dialog.set_status("Launching 2SDAY…")
                 dialog.set_progress(100)
                 dialog.pump_messages()
                 time.sleep(0.4)
@@ -96,7 +96,7 @@ def run_launcher(dev_mode: bool = False, test_download_fail: bool = False) -> No
             except Exception as exc:  # noqa: BLE001
                 result["error"] = exc
                 log.error(f"Launcher error: {exc}", exc_info=True)
-                _show_error(f"Failed to prepare Coral:\n\n{exc}")
+                _show_error(f"Failed to prepare 2SDAY:\n\n{exc}")
                 updater_log.exception("Launcher sequence crashed", exc_info=True)
             finally:
                 dialog.allow_close()

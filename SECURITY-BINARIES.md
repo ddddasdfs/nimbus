@@ -1,6 +1,6 @@
-# Coral — Bundled Binary Provenance & Verification
+# 2SDAY — Bundled Binary Provenance & Verification
 
-Coral's core Python and JavaScript are auditable source. This document tracks the
+2SDAY's core Python and JavaScript are auditable source. This document tracks the
 **pre-compiled binaries** that ship in the tree, which source review cannot clear on
 its own. For a fully trustworthy build, each binary should be either (a) verified by
 hash against an official upstream release, or (b) rebuilt from audited source.
@@ -53,10 +53,10 @@ Downloaded the official `pengu-loader-v1.1.6.zip`
   `System.ValueTuple.dll` are **byte-identical** to the official v1.1.6 release, and the
   official `Pengu Loader.exe`/`core.dll` are signed by SignPath Foundation.
 - **The Rose build ADDS custom headless CLI flags** — `--force-activate`,
-  `--force-deactivate`, `--set-league-path`, `--restart-client`, `--silent` — that Coral's
+  `--force-deactivate`, `--set-league-path`, `--restart-client`, `--silent` — that 2SDAY's
   `utils/integration/pengu_loader.py` depends on for automatic activation. **Official
   Pengu Loader v1.1.6 does NOT contain these flags** (only `--install`). Therefore a
-  drop-in swap to the official binary would break Coral's auto-activation; using official
+  drop-in swap to the official binary would break 2SDAY's auto-activation; using official
   Pengu Loader requires rewriting `pengu_loader.py` to its actual mechanism.
 
 **Net:** the Pengu binary is not an opaque unknown — it is the Rose author's Authenticode-
@@ -76,7 +76,7 @@ best-controlled binary in the project and needs no change.
   official package before trusting.
 - **`Pengu Loader.exe` + `core.dll`:** Custom "Rose Loader" fork — cannot be verified
   against any official release. Either replace with official Pengu Loader v1.1.6
-  (code-signed; test that the CORAL-* plugins still load) or obtain and audit the fork's
+  (code-signed; test that the 2SDAY-* plugins still load) or obtain and audit the fork's
   source and rebuild.
 - **ModernWpf / Ookii / ValueTuple DLLs:** Standard open-source NuGet packages; verify
   against nuget.org package hashes if desired.
@@ -94,7 +94,7 @@ rebuild is therefore a separate, toolchain-dependent task.
    match, they are as trustworthy as upstream; record the verified hashes below. If they
    do not match, replace them with the extracted official tools.
 2. **Replace `Pengu Loader.exe`/`core.dll`** with official Pengu Loader v1.1.6, or vendor
-   and audit the Rose-Pengu fork source and rebuild. Confirm the `CORAL-*` plugins load
+   and audit the Rose-Pengu fork source and rebuild. Confirm the `2SDAY-*` plugins load
    after any swap.
 3. Once each binary is from a source you trust, record its verified hash in the
    "verified upstream SHA-256" column (add it) and keep this file under version control so

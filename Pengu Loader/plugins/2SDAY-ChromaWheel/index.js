@@ -1,8 +1,8 @@
 /**
- * @name Coral-ChromaWheel
- * @author Coral Team
+ * @name 2SDAY-ChromaWheel
+ * @author 2SDAY Team
  * @description Chroma wheel for Pengu Loader
- * @link https://github.com/ddddasdfs/Coral
+ * @link https://github.com/ddddasdfs/2SDAY
  */
 (function createFakeChromaButton() {
   const LOG_PREFIX = "[LU-ChromaButton]";
@@ -15,9 +15,9 @@
     ".skin-name-text", // Classic Champ Select
     ".skin-name", // Swiftplay lobby
   ];
-  const SPECIAL_BASE_SKIN_IDS = new Set([99007]); // 82054, 145070, 103085, 25080 removed - handled by CORAL-FormsWheel
-  const SPECIAL_CHROMA_SKIN_IDS = new Set([100001, 88888]); // 145071, 103086, 103087 removed - handled by CORAL-FormsWheel
-  // HOL skins handled by CORAL-FormsWheel (should not show ChromaWheel buttons)
+  const SPECIAL_BASE_SKIN_IDS = new Set([99007]); // 82054, 145070, 103085, 25080 removed - handled by 2SDAY-FormsWheel
+  const SPECIAL_CHROMA_SKIN_IDS = new Set([100001, 88888]); // 145071, 103086, 103087 removed - handled by 2SDAY-FormsWheel
+  // HOL skins handled by 2SDAY-FormsWheel (should not show ChromaWheel buttons)
   const HOL_SKIN_IDS = new Set([145070, 145071, 103085, 103086, 103087]);
   const chromaParentMap = new Map();
   let skinMonitorState = null;
@@ -47,7 +47,7 @@
       .replace(/'/g, '&#039;');
   }
 
-  // Shared bridge API (provided by CORAL-Bridge plugin)
+  // Shared bridge API (provided by 2SDAY-Bridge plugin)
   let bridge = null;
 
   function waitForBridge() {
@@ -56,7 +56,7 @@
       const interval = 50;
       let elapsed = 0;
       const check = () => {
-        if (window.__coralBridge) return resolve(window.__coralBridge);
+        if (window.__twosdayBridge) return resolve(window.__twosdayBridge);
         elapsed += interval;
         if (elapsed >= timeout) return reject(new Error("Bridge not available"));
         setTimeout(check, interval);
@@ -576,7 +576,7 @@
     );
 
     // Note: isMordekaiser and isMorgana are global functions defined elsewhere
-    // HOL chromas (Kai'Sa and Ahri) are now handled by CORAL-FormsWheel
+    // HOL chromas (Kai'Sa and Ahri) are now handled by 2SDAY-FormsWheel
 
     // Helper to get buttonIconPath for Elementalist Lux forms
     const getButtonIconPathForElementalist = (chromaId) => {
@@ -587,22 +587,22 @@
     };
 
     // Helper to get buttonIconPath for Sahn Uzal Mordekaiser forms
-    // Note: Mordekaiser handling removed - now handled by CORAL-FormsWheel plugin
+    // Note: Mordekaiser handling removed - now handled by 2SDAY-FormsWheel plugin
     const getButtonIconPathForMordekaiser = (chromaId) => {
       // This function is kept for compatibility but should not be used
-      // Mordekaiser is now handled by CORAL-FormsWheel
+      // Mordekaiser is now handled by 2SDAY-FormsWheel
       return null;
     };
 
     // Helper to get buttonIconPath for Spirit Blossom Morgana forms
-    // Note: Morgana handling removed - now handled by CORAL-FormsWheel plugin
+    // Note: Morgana handling removed - now handled by 2SDAY-FormsWheel plugin
     const getButtonIconPathForMorgana = (chromaId) => {
       // This function is kept for compatibility but should not be used
-      // Morgana is now handled by CORAL-FormsWheel
+      // Morgana is now handled by 2SDAY-FormsWheel
       return null;
     };
 
-    // Helper to get buttonIconPath for HOL chromas - removed, handled by CORAL-FormsWheel
+    // Helper to get buttonIconPath for HOL chromas - removed, handled by 2SDAY-FormsWheel
 
     // Update selectedChromaData based on Python state
     if (data.selectedChromaId && data.chromaColor) {
@@ -691,8 +691,8 @@
         log.debug(
           `[ChromaWheel] Elementalist Lux form detected: ${data.selectedChromaId}, buttonIconPath: ${selectedChromaData.buttonIconPath}`
         );
-        // Note: Mordekaiser (82054) and Spirit Blossom Morgana (25080) handling removed - now handled by CORAL-FormsWheel plugin
-        // HOL chromas (Kai'Sa and Ahri) are now handled by CORAL-FormsWheel - skip here
+        // Note: Mordekaiser (82054) and Spirit Blossom Morgana (25080) handling removed - now handled by 2SDAY-FormsWheel plugin
+        // HOL chromas (Kai'Sa and Ahri) are now handled by 2SDAY-FormsWheel - skip here
       } else {
         // Regular chroma - try to find from cache
         // Fallback: try to infer base skin ID from chroma ID (chroma IDs are typically baseSkinId + offset)
@@ -775,7 +775,7 @@
       ) {
         buttonIconPath = getElementalistButtonIconPath(data.currentSkinId);
       }
-      // Note: Mordekaiser (82054), Spirit Blossom Morgana (25080), and HOL chromas (Kai'Sa and Ahri) are now handled by CORAL-FormsWheel - skip here
+      // Note: Mordekaiser (82054), Spirit Blossom Morgana (25080), and HOL chromas (Kai'Sa and Ahri) are now handled by 2SDAY-FormsWheel - skip here
 
       selectedChromaData = {
         id: data.currentSkinId || null,
@@ -1068,7 +1068,7 @@
     return forms;
   }
 
-  // HOL chroma functions removed - now handled by CORAL-FormsWheel
+  // HOL chroma functions removed - now handled by 2SDAY-FormsWheel
 
   // Get Sahn Uzal Mordekaiser Forms data locally (same as Python's get_mordekaiser_forms)
   function getMordekaiserForms() {
@@ -1155,7 +1155,7 @@
     return path;
   }
 
-  // getHolButtonIconPath removed - now handled by CORAL-FormsWheel
+  // getHolButtonIconPath removed - now handled by 2SDAY-FormsWheel
 
   function isSpecialBaseSkin(skinId) {
     return (
@@ -1895,7 +1895,7 @@
     const isCurrent = isCurrentSkinItem(skinItem);
     const currentSkinId = skinMonitorState?.skinId ?? null;
 
-    // Skip HOL skins - they are handled by CORAL-FormsWheel
+    // Skip HOL skins - they are handled by 2SDAY-FormsWheel
     if (currentSkinId && HOL_SKIN_IDS.has(currentSkinId)) {
       // Remove existing button if it exists (shouldn't be there, but clean up just in case)
       const existingButton = skinItem.querySelector(BUTTON_SELECTOR);
@@ -1907,7 +1907,7 @@
 
     const hasChromas = Boolean(
       skinMonitorState?.hasChromas || hasKnownChromas(currentSkinId)
-      // Note: Mordekaiser (82054), Spirit Blossom Morgana (25080), and HOL skins removed - handled by CORAL-FormsWheel
+      // Note: Mordekaiser (82054), Spirit Blossom Morgana (25080), and HOL skins removed - handled by 2SDAY-FormsWheel
     );
 
     // Check if button already exists
@@ -2359,11 +2359,11 @@
       return markSelectedChroma(allChromas, currentSkinId);
     }
 
-    // NOTE: Sahn Uzal Mordekaiser (82054) and Spirit Blossom Morgana (25080) removed - now handled by CORAL-FormsWheel plugin
+    // NOTE: Sahn Uzal Mordekaiser (82054) and Spirit Blossom Morgana (25080) removed - now handled by 2SDAY-FormsWheel plugin
     // Previously these special cases handled Mordekaiser and Morgana forms, but they're now excluded from this plugin
 
-    // SPECIAL CASE: Risen Legend Kai'Sa and Ahri HoL skins are now handled by CORAL-FormsWheel
-    // (removed - handled by CORAL-FormsWheel)
+    // SPECIAL CASE: Risen Legend Kai'Sa and Ahri HoL skins are now handled by 2SDAY-FormsWheel
+    // (removed - handled by 2SDAY-FormsWheel)
 
     // First, check if chromas are directly in the skinData (like official client)
     // The official client gets chromas from the Ember component context
@@ -3074,7 +3074,7 @@
   function updateChromaPreview(chroma, chromaImage) {
     // Update preview image using chroma imagePath
     // For special skins (Elementalist Lux, Spirit Blossom Morgana, HOL chromas), use local preview paths
-    // Note: Mordekaiser removed - handled by CORAL-FormsWheel
+    // Note: Mordekaiser removed - handled by 2SDAY-FormsWheel
     // For regular chromas, use LCU API paths
     const imagePath = chroma.imagePath;
 
@@ -3132,7 +3132,7 @@
   function updateChromaButtonColor() {
     // Update the chroma button's content background to match selected chroma
     // For Elementalist Lux forms and Spirit Blossom Morgana forms: use button icon image
-    // Note: Mordekaiser removed - handled by CORAL-FormsWheel
+    // Note: Mordekaiser removed - handled by 2SDAY-FormsWheel
     // If default chroma (no color), keep the button-chroma.png image
     // If chroma has color, use that color as background
     // This works for both normal champ select and Swiftplay mode
@@ -3150,14 +3150,14 @@
       }
 
       // Check if this chroma has a button icon path (Elementalist Lux forms, Spirit Blossom Morgana forms, or HOL chromas)
-      // Note: Mordekaiser removed - handled by CORAL-FormsWheel
+      // Note: Mordekaiser removed - handled by 2SDAY-FormsWheel
       if (
         selectedChromaData &&
         selectedChromaData.buttonIconPath &&
         selectedChromaData.buttonIconPath.startsWith("local-asset://")
       ) {
         // Elementalist Lux form, Spirit Blossom Morgana form, or HOL chroma - always request the icon to ensure it matches the selected chroma
-        // Note: Mordekaiser removed - handled by CORAL-FormsWheel
+        // Note: Mordekaiser removed - handled by 2SDAY-FormsWheel
         // Track the last applied chroma ID on the button to detect when switching between chromas
         const lastAppliedChromaId = content.getAttribute("data-last-chroma-id");
         const chromaIdChanged =
@@ -3254,12 +3254,12 @@
 
       // Check if this is the default chroma (no color or name is "Default")
       // BUT: For Elementalist Lux, even the "Default" button should show its icon, not the generic default
-      // Note: Mordekaiser (82054), Spirit Blossom Morgana (25080), and HOL chromas are now handled by CORAL-FormsWheel
+      // Note: Mordekaiser (82054), Spirit Blossom Morgana (25080), and HOL chromas are now handled by 2SDAY-FormsWheel
       const isElementalistLux =
         selectedChromaData &&
         (selectedChromaData.id === 99007 ||
           (selectedChromaData.id >= 99991 && selectedChromaData.id <= 99999));
-      // HOL chromas are now handled by CORAL-FormsWheel
+      // HOL chromas are now handled by 2SDAY-FormsWheel
       const isDefault =
         !selectedChromaData ||
         (selectedChromaData.name === "Default" && !isElementalistLux) ||
@@ -3471,7 +3471,7 @@
   function toggleChromaPanel(buttonElement, skinItem) {
     log.info("[ChromaWheel] toggleChromaPanel called");
 
-    // Don't open panel for HOL skins - they are handled by CORAL-FormsWheel
+    // Don't open panel for HOL skins - they are handled by 2SDAY-FormsWheel
     const currentSkinId = skinMonitorState?.skinId ?? null;
     if (currentSkinId && HOL_SKIN_IDS.has(currentSkinId)) {
       log.debug(`[ChromaWheel] Skipping panel for HOL skin ${currentSkinId} (handled by FormsWheel)`);
@@ -3769,8 +3769,8 @@
       return;
     }
 
-    if (window.__coralSkinState) {
-      skinMonitorState = window.__coralSkinState;
+    if (window.__twosdaySkinState) {
+      skinMonitorState = window.__twosdaySkinState;
       maybeInferChampionLockedFromSkinState(skinMonitorState);
 
       // Warm champion data up front so button visibility can recover even if

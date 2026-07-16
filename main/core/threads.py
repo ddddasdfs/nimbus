@@ -56,7 +56,7 @@ def initialize_threads(lcu, state, args, injection_manager, skin_scraper, app_st
                                       reconnect_callback=on_lcu_reconnected)
     thread_manager.register("LCU Monitor", t_lcu_monitor)
 
-    # Analytics/telemetry removed in Coral — no usage pings are sent.
+    # Analytics/telemetry removed in 2SDAY — no usage pings are sent.
 
     # Start all threads
     thread_manager.start_all()

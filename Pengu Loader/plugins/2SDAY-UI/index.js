@@ -1,11 +1,11 @@
 /**
- * @name Coral-UI
- * @author Coral Team
+ * @name 2SDAY-UI
+ * @author 2SDAY Team
  * @description Interface unlocker for Pengu Loader
- * @link https://github.com/ddddasdfs/Coral
+ * @link https://github.com/ddddasdfs/2SDAY
  */
 (function enableLockedSkinPreview() {
-  const LOG_PREFIX = "[Coral-UI][skin-preview]";
+  const LOG_PREFIX = "[2SDAY-UI][skin-preview]";
   const INLINE_ID = "lpp-ui-unlock-skins-css-inline";
   const BORDER_CLASS = "lpp-skin-border";
   const HIDDEN_CLASS = "lpp-skin-hidden";
@@ -20,7 +20,7 @@
       const interval = 50;
       let elapsed = 0;
       const check = () => {
-        if (window.__coralBridge) return resolve(window.__coralBridge);
+        if (window.__twosdayBridge) return resolve(window.__twosdayBridge);
         elapsed += interval;
         if (elapsed >= timeout) return reject(new Error("Bridge not available"));
         setTimeout(check, interval);
@@ -34,10 +34,10 @@
 
   function handleSkipBaseSkin(payload) {
     lastBaseSkinSkipRequest = Date.now();
-    log.info("received base skin skip request from coral");
+    log.info("received base skin skip request from 2sday");
   }
 
-  // TODO Preferably move bridge communication logic and websocket interception to a separate Pengu plugin like CORAL-CORE,
+  // TODO Preferably move bridge communication logic and websocket interception to a separate Pengu plugin like 2SDAY-CORE,
   // which provides a simple interface for adding custom observers for bridge and socket instead of duplicating this kind
   // of code over all the plugins; this will do for now though
   function interceptChampSelectWebsocket() {
@@ -71,7 +71,7 @@
                     // skip delegation
                     return;
                   } else {
-                    log.info("not skipping base skin: no request received from coral (in time)");
+                    log.info("not skipping base skin: no request received from 2sday (in time)");
                   }
                 }
               }
@@ -90,23 +90,23 @@
   }
 
   const INLINE_RULES = `
-    lol-uikit-navigation-item.menu_item_Golden\\ Coral {
+    lol-uikit-navigation-item.menu_item_Golden\\ 2SDAY {
       position: relative;
     }
 
-    /* Prevent active state styling for Golden Coral */
-    lol-uikit-navigation-item.menu_item_Golden\\ Coral .section.active::before,
-    lol-uikit-navigation-item.menu_item_Golden\\ Coral .section.active::after,
-    lol-uikit-navigation-item.menu_item_Golden\\ Coral .section.active,
-    lol-uikit-navigation-item.menu_item_Golden\\ Coral .section.active .section-glow,
-    lol-uikit-navigation-item.menu_item_Golden\\ Coral .section.active .section-glow-container {
+    /* Prevent active state styling for Golden 2SDAY */
+    lol-uikit-navigation-item.menu_item_Golden\\ 2SDAY .section.active::before,
+    lol-uikit-navigation-item.menu_item_Golden\\ 2SDAY .section.active::after,
+    lol-uikit-navigation-item.menu_item_Golden\\ 2SDAY .section.active,
+    lol-uikit-navigation-item.menu_item_Golden\\ 2SDAY .section.active .section-glow,
+    lol-uikit-navigation-item.menu_item_Golden\\ 2SDAY .section.active .section-glow-container {
       display: none !important;
       background: none !important;
       background-image: none !important;
     }
 
     /* Prevent hover state from showing navigation pointer */
-    lol-uikit-navigation-item.menu_item_Golden\\ Coral .section:hover::after {
+    lol-uikit-navigation-item.menu_item_Golden\\ 2SDAY .section:hover::after {
       opacity: 0 !important;
       background: none !important;
       background-image: none !important;
@@ -512,7 +512,7 @@
     }
   }
 
-  function attachGoldenCoralListeners(navItem) {
+  function attachGoldenTwosdayListeners(navItem) {
     // Check if listeners already attached
     if (navItem.dataset.lppDiscordAttached === "true") {
       return;
@@ -524,17 +524,17 @@
       (e) => {
         const lastActiveNavItem = document.querySelector(".main-nav-bar > * > lol-uikit-navigation-item[active]");
         if (lastActiveNavItem) {
-          lastActiveNavItem.setAttribute("coralLastActive", true);
+          lastActiveNavItem.setAttribute("twosdayLastActive", true);
         }
 
         // Dispatch event to open settings panel
-        const event = new CustomEvent("coral-open-settings", {
+        const event = new CustomEvent("twosday-open-settings", {
           detail: { navItem: navItem },
           bubbles: true,
           cancelable: true,
         });
         window.dispatchEvent(event);
-        log.info("Dispatched coral-open-settings event from Golden Coral button");
+        log.info("Dispatched twosday-open-settings event from Golden 2SDAY button");
       },
       true
     ); // Use capture phase to intercept early
@@ -552,14 +552,14 @@
             e.preventDefault();
 
             // Dispatch event to open settings panel
-            const event = new CustomEvent("coral-open-settings", {
+            const event = new CustomEvent("twosday-open-settings", {
               detail: { navItem: navItem },
               bubbles: true,
               cancelable: true,
             });
             window.dispatchEvent(event);
             log.info(
-              "Dispatched coral-open-settings event from Golden Coral section"
+              "Dispatched twosday-open-settings event from Golden 2SDAY section"
             );
 
             // Prevent active class
@@ -618,20 +618,20 @@
     navItem.dataset.lppDiscordAttached = "true";
   }
 
-  function injectGoldenCoralNavItem() {
+  function injectGoldenTwosdayNavItem() {
     const rightNavMenu = document.querySelector(".right-nav-menu");
     if (!rightNavMenu) {
       return false;
     }
 
-    // Check if Golden Coral item already exists by checking for the golden_coral.png image
+    // Check if Golden 2SDAY item already exists by checking for the golden_2sday.png image
     const existingItem = rightNavMenu.querySelector(
-      'lol-uikit-navigation-item .menu-item-icon[style*="golden_coral.png"]'
+      'lol-uikit-navigation-item .menu-item-icon[style*="golden_2sday.png"]'
     );
     if (existingItem) {
       const navItem = existingItem.closest("lol-uikit-navigation-item");
       if (navItem) {
-        attachGoldenCoralListeners(navItem);
+        attachGoldenTwosdayListeners(navItem);
       }
       return true;
     }
@@ -640,7 +640,7 @@
     const navItem = document.createElement("lol-uikit-navigation-item");
     navItem.id = `ember${Date.now()}`;
     navItem.className =
-      "main-navigation-menu-item menu_item_Golden Coral ember-view";
+      "main-navigation-menu-item menu_item_Golden 2SDAY ember-view";
 
     // Create icon wrapper structure
     const iconWrapper = document.createElement("div");
@@ -651,7 +651,7 @@
 
     const icon = document.createElement("div");
     icon.className = "menu-item-icon";
-    icon.style.webkitMaskImage = `url(http://127.0.0.1:${window.__coralBridge ? window.__coralBridge.port : 50000}/asset/golden_coral.png)`;
+    icon.style.webkitMaskImage = `url(http://127.0.0.1:${window.__twosdayBridge ? window.__twosdayBridge.port : 50000}/asset/golden_2sday.png)`;
 
     iconWrapper.appendChild(glow);
     iconWrapper.appendChild(icon);
@@ -665,27 +665,27 @@
       rightNavMenu.appendChild(navItem);
     }
 
-    // Add separator after the Golden Coral item
+    // Add separator after the Golden 2SDAY item
     const separator = document.createElement("div");
     separator.className = "right-nav-vertical-rule";
     rightNavMenu.insertBefore(separator, navItem.nextSibling);
 
     // Attach Discord click listeners
-    attachGoldenCoralListeners(navItem);
+    attachGoldenTwosdayListeners(navItem);
 
-    log.info("Golden Coral navigation item injected");
+    log.info("Golden 2SDAY navigation item injected");
     return true;
   }
 
   function setupNavObserver() {
     // Try to inject immediately
-    if (injectGoldenCoralNavItem()) {
+    if (injectGoldenTwosdayNavItem()) {
       return;
     }
 
     // If not found, observe for nav menu creation
     const observer = new MutationObserver(() => {
-      if (injectGoldenCoralNavItem()) {
+      if (injectGoldenTwosdayNavItem()) {
         observer.disconnect();
       }
     });
@@ -697,7 +697,7 @@
 
     // Also check periodically as a safety net
     const intervalId = setInterval(() => {
-      if (injectGoldenCoralNavItem()) {
+      if (injectGoldenTwosdayNavItem()) {
         clearInterval(intervalId);
         observer.disconnect();
       }

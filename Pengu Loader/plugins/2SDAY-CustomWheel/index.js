@@ -1,16 +1,16 @@
 /**
- * @name CORAL-CustomWheel
- * @author Coral Team
+ * @name 2SDAY-CustomWheel
+ * @author 2SDAY Team
  * @description Custom mod wheel for Pengu Loader - displays installed mods for hovered skins
- * @link https://github.com/ddddasdfs/Coral
+ * @link https://github.com/ddddasdfs/2SDAY
  */
 (function createCustomWheel() {
-  const LOG_PREFIX = "[CORAL-CustomWheel]";
+  const LOG_PREFIX = "[2SDAY-CustomWheel]";
   console.log(`${LOG_PREFIX} JS Loaded`);
   const BUTTON_CLASS = "lu-chroma-button";
   const BUTTON_SELECTOR = `.${BUTTON_CLASS}`;
   const PANEL_CLASS = "lu-chroma-panel";
-  const PANEL_ID = "coral-custom-wheel-panel-container";
+  const PANEL_ID = "twosday-custom-wheel-panel-container";
   const REQUEST_TYPE = "request-skin-mods";
   const EVENT_SKIN_STATE = "lu-skin-monitor-state";
 
@@ -172,14 +172,14 @@
     if (panel._rightTitle) {
       if (mode === "picker") {
         const icon = SUMMARY_ICONS[activeTab] || "";
-        panel._rightTitle.innerHTML = `<span class="coral-wheel-title-icon">${icon}</span> Choose \u2022 ${escapeHtml(getTabLabel(activeTab))}`;
+        panel._rightTitle.innerHTML = `<span class="twosday-wheel-title-icon">${icon}</span> Choose \u2022 ${escapeHtml(getTabLabel(activeTab))}`;
       } else {
         panel._rightTitle.textContent = "Custom Mods";
       }
     }
   }
 
-  // Shared bridge API (provided by CORAL-SkinMonitor)
+  // Shared bridge API (provided by 2SDAY-SkinMonitor)
   let bridge = null;
 
   function waitForBridge() {
@@ -188,7 +188,7 @@
       const interval = 50;
       let elapsed = 0;
       const check = () => {
-        if (window.__coralBridge) return resolve(window.__coralBridge);
+        if (window.__twosdayBridge) return resolve(window.__twosdayBridge);
         elapsed += interval;
         if (elapsed >= timeout) return reject(new Error("Bridge not available"));
         setTimeout(check, interval);
@@ -225,23 +225,23 @@
     }
 
     /* Button and Badge Styles */
-    lol-uikit-flat-button.coral-custom-wheel-button,
-    .coral-custom-wheel-button {
+    lol-uikit-flat-button.twosday-custom-wheel-button,
+    .twosday-custom-wheel-button {
       display: inline-block !important;
       white-space: nowrap !important;
       /* Keep badge stacking self-contained (prevents weird overlap with other UI) */
       isolation: isolate !important;
     }
 
-    .coral-custom-wheel-button .count-badge.social-count-badge,
-    lol-uikit-flat-button.coral-custom-wheel-button .count-badge.social-count-badge,
-    .coral-custom-wheel-button > .count-badge.social-count-badge,
-    lol-uikit-flat-button.coral-custom-wheel-button > .count-badge.social-count-badge {
+    .twosday-custom-wheel-button .count-badge.social-count-badge,
+    lol-uikit-flat-button.twosday-custom-wheel-button .count-badge.social-count-badge,
+    .twosday-custom-wheel-button > .count-badge.social-count-badge,
+    lol-uikit-flat-button.twosday-custom-wheel-button > .count-badge.social-count-badge {
       position: absolute !important;
       /* Positioning: edit these via CSS variables on the element (DevTools-friendly) */
-      top: var(--coral-badge-top, -4px) !important;
-      right: var(--coral-badge-right, -17px) !important;
-      left: var(--coral-badge-left, auto) !important;
+      top: var(--twosday-badge-top, -4px) !important;
+      right: var(--twosday-badge-right, -17px) !important;
+      left: var(--twosday-badge-left, auto) !important;
       min-width: 18px !important;
       height: 18px !important;
       padding: 0 5px !important;
@@ -259,8 +259,8 @@
       /* Above button contents, but not globally "high" */
       z-index: 1 !important;
       transform: translate(
-        var(--coral-badge-translate-x, 60%),
-        var(--coral-badge-translate-y, -60%)
+        var(--twosday-badge-translate-x, 60%),
+        var(--twosday-badge-translate-y, -60%)
       ) !important;
       margin: 0 !important;
       bottom: auto !important;
@@ -383,7 +383,7 @@
     /* Tab Navigation */
     /* ===== Unified Summary rows (category + status + change in one row) ===== */
 
-    .${PANEL_CLASS} .coral-wheel-right-header {
+    .${PANEL_CLASS} .twosday-wheel-right-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -394,7 +394,7 @@
       flex-shrink: 0;
     }
 
-    .${PANEL_CLASS} .coral-wheel-right-title {
+    .${PANEL_CLASS} .twosday-wheel-right-title {
       font-weight: 700;
       color: #f0e6d2;
       font-size: 13px;
@@ -406,13 +406,13 @@
       gap: 6px;
     }
 
-    .${PANEL_CLASS} .coral-wheel-right-title .coral-wheel-title-icon {
+    .${PANEL_CLASS} .twosday-wheel-right-title .twosday-wheel-title-icon {
       width: 18px;
       height: 18px;
       flex-shrink: 0;
     }
 
-    .${PANEL_CLASS} .coral-wheel-right-title .coral-wheel-title-icon svg {
+    .${PANEL_CLASS} .twosday-wheel-right-title .twosday-wheel-title-icon svg {
       width: 18px;
       height: 18px;
       fill: none;
@@ -422,7 +422,7 @@
       stroke-linejoin: round;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary {
+    .${PANEL_CLASS} .twosday-wheel-summary {
       flex: 1;
       min-height: 0;
       display: flex;
@@ -433,11 +433,11 @@
       overflow-y: auto;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary::-webkit-scrollbar { width: 6px; }
-    .${PANEL_CLASS} .coral-wheel-summary::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-    .${PANEL_CLASS} .coral-wheel-summary::-webkit-scrollbar-thumb { background: #5b5a56; border-radius: 3px; }
+    .${PANEL_CLASS} .twosday-wheel-summary::-webkit-scrollbar { width: 6px; }
+    .${PANEL_CLASS} .twosday-wheel-summary::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+    .${PANEL_CLASS} .twosday-wheel-summary::-webkit-scrollbar-thumb { background: #5b5a56; border-radius: 3px; }
 
-    .${PANEL_CLASS} .coral-wheel-summary-row {
+    .${PANEL_CLASS} .twosday-wheel-summary-row {
       display: grid;
       grid-template-columns: 1fr auto;
       align-items: center;
@@ -449,15 +449,15 @@
       transition: border-left-color 0.2s ease;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary-row.active {
+    .${PANEL_CLASS} .twosday-wheel-summary-row.active {
       border-left: 3px solid #c8aa6e;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary-row:hover .coral-wheel-summary-icon {
+    .${PANEL_CLASS} .twosday-wheel-summary-row:hover .twosday-wheel-summary-icon {
       color: #c8aa6e;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary-icon {
+    .${PANEL_CLASS} .twosday-wheel-summary-icon {
       width: 18px;
       height: 18px;
       flex-shrink: 0;
@@ -465,7 +465,7 @@
       transition: color 0.2s ease;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary-icon svg {
+    .${PANEL_CLASS} .twosday-wheel-summary-icon svg {
       width: 18px;
       height: 18px;
       fill: none;
@@ -475,7 +475,7 @@
       stroke-linejoin: round;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary-left {
+    .${PANEL_CLASS} .twosday-wheel-summary-left {
       flex: 1;
       min-width: 0;
       display: flex;
@@ -483,7 +483,7 @@
       gap: 6px;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary-label {
+    .${PANEL_CLASS} .twosday-wheel-summary-label {
       color: #a09b8c;
       font-size: 12px;
       font-weight: 700;
@@ -491,20 +491,20 @@
       letter-spacing: 0.5px;
     }
 
-    .${PANEL_CLASS} .coral-wheel-summary-value {
+    .${PANEL_CLASS} .twosday-wheel-summary-value {
       color: #f0e6d2;
       font-size: 13px;
       font-weight: 700;
       word-break: break-word;
     }
 
-    .${PANEL_CLASS} .coral-wheel-picker {
+    .${PANEL_CLASS} .twosday-wheel-picker {
       flex: 1;
       min-height: 0;
       display: none;
     }
 
-    .${PANEL_CLASS} .coral-wheel-picker.active {
+    .${PANEL_CLASS} .twosday-wheel-picker.active {
       display: flex;
       flex-direction: column;
       min-height: 0;
@@ -657,7 +657,7 @@
   `;
 
   function injectCSS() {
-    const styleId = "coral-custom-wheel-css";
+    const styleId = "twosday-custom-wheel-css";
     if (document.getElementById(styleId)) {
       return;
     }
@@ -678,7 +678,7 @@
     } catch (e) {
       button = document.createElement("div");
     }
-    button.className = "lol-uikit-flat-button idle coral-custom-wheel-button";
+    button.className = "lol-uikit-flat-button idle twosday-custom-wheel-button";
     button.textContent = "Custom mods";
 
     // Ensure button has relative positioning for badge (only if not already positioned)
@@ -693,11 +693,11 @@
     countBadge.textContent = "0";
     countBadge.style.display = "none"; // Hidden by default
     // Defaults (can be overridden live in DevTools on the element via CSS variables)
-    countBadge.style.setProperty("--coral-badge-top", "-4px");
-    countBadge.style.setProperty("--coral-badge-right", "-17px");
-    countBadge.style.setProperty("--coral-badge-left", "auto");
-    countBadge.style.setProperty("--coral-badge-translate-x", "60%");
-    countBadge.style.setProperty("--coral-badge-translate-y", "-60%");
+    countBadge.style.setProperty("--twosday-badge-top", "-4px");
+    countBadge.style.setProperty("--twosday-badge-right", "-17px");
+    countBadge.style.setProperty("--twosday-badge-left", "auto");
+    countBadge.style.setProperty("--twosday-badge-translate-x", "60%");
+    countBadge.style.setProperty("--twosday-badge-translate-y", "-60%");
     button.appendChild(countBadge);
     button._countBadge = countBadge; // Store reference
 
@@ -804,7 +804,7 @@
       if (panel && panel._rightTitle) {
         if (rightPaneMode === "picker") {
           const icon = SUMMARY_ICONS[activeTab] || "";
-          panel._rightTitle.innerHTML = `<span class="coral-wheel-title-icon">${icon}</span> Choose \u2022 ${escapeHtml(getTabLabel(activeTab))}`;
+          panel._rightTitle.innerHTML = `<span class="twosday-wheel-title-icon">${icon}</span> Choose \u2022 ${escapeHtml(getTabLabel(activeTab))}`;
         } else {
           panel._rightTitle.textContent = "Custom Mods";
         }
@@ -960,10 +960,10 @@
 
     // Header + Summary + Picker (Summary rows contain the category buttons on the left)
     const rightHeader = document.createElement("div");
-    rightHeader.className = "coral-wheel-right-header";
+    rightHeader.className = "twosday-wheel-right-header";
 
     const rightTitle = document.createElement("div");
-    rightTitle.className = "coral-wheel-right-title";
+    rightTitle.className = "twosday-wheel-right-title";
     rightTitle.textContent = "Custom Mods";
 
     const headerButtons = document.createElement("div");
@@ -982,27 +982,27 @@
 
     // Summary view (all categories)
     const summaryView = document.createElement("div");
-    summaryView.className = "coral-wheel-summary";
+    summaryView.className = "twosday-wheel-summary";
 
     panel._summaryValuesByTab = {};
     panel._summaryRowsByTab = {};
 
     SUMMARY_TABS.forEach((tab) => {
       const row = document.createElement("div");
-      row.className = "coral-wheel-summary-row";
+      row.className = "twosday-wheel-summary-row";
 
       // Left cell: value
       const left = document.createElement("div");
-      left.className = "coral-wheel-summary-left";
+      left.className = "twosday-wheel-summary-left";
 
       const label = document.createElement("div");
-      label.className = "coral-wheel-summary-label";
+      label.className = "twosday-wheel-summary-label";
       label.style.display = "flex";
       label.style.alignItems = "center";
       label.style.gap = "6px";
 
       const iconSpan = document.createElement("span");
-      iconSpan.className = "coral-wheel-summary-icon";
+      iconSpan.className = "twosday-wheel-summary-icon";
       iconSpan.innerHTML = SUMMARY_ICONS[tab.id] || "";
       label.appendChild(iconSpan);
 
@@ -1011,7 +1011,7 @@
       label.appendChild(labelText);
 
       const value = document.createElement("div");
-      value.className = "coral-wheel-summary-value";
+      value.className = "twosday-wheel-summary-value";
       value.textContent = getSelectedSummaryForTab(tab.id);
       panel._summaryValuesByTab[tab.id] = value;
 
@@ -1036,7 +1036,7 @@
 
     // Picker view (reuses existing scrollable with tab contents)
     const pickerView = document.createElement("div");
-    pickerView.className = "coral-wheel-picker";
+    pickerView.className = "twosday-wheel-picker";
     pickerView.appendChild(scrollable);
 
     backBtn.addEventListener("click", (e) => {
@@ -1183,7 +1183,7 @@
       if (parentLi) parentLi.classList.remove("selected-row");
 
       // Emit deselection to Python backend (modId: null means deselect)
-      const state = window.__coralSkinState || {};
+      const state = window.__twosdaySkinState || {};
       const championId = Number(state.championId);
       const skinId = Number(state.skinId);
 
@@ -1216,7 +1216,7 @@
       selectedModId = modId;
       // Store the mod's own target skinId (from the backend entry), not the currently hovered skin.
       const modTargetSkinId = modData?.skinId ? Number(modData.skinId) : null;
-      const state = window.__coralSkinState || {};
+      const state = window.__twosdaySkinState || {};
       selectedModSkinId = modTargetSkinId || Number(state.skinId);
 
       buttonElement.textContent = "Selected";
@@ -1235,10 +1235,10 @@
           modId,
           modData,
         };
-        console.log(`[CORAL-CustomWheel] Sending mod selection:`, payload);
+        console.log(`[2SDAY-CustomWheel] Sending mod selection:`, payload);
         if (bridge) bridge.send(payload);
       } else {
-        console.warn(`[CORAL-CustomWheel] Cannot send mod selection - missing championId or skinId:`, { championId, skinId: emitSkinId });
+        console.warn(`[2SDAY-CustomWheel] Cannot send mod selection - missing championId or skinId:`, { championId, skinId: emitSkinId });
       }
     }
 
@@ -1298,7 +1298,7 @@
             if (prevBtn) { prevBtn.textContent = "Select"; prevBtn.classList.remove("selected"); }
             prevLi.classList.remove("selected-row");
           }
-          const state = window.__coralSkinState || {};
+          const state = window.__twosdaySkinState || {};
           const championId = Number(state.championId);
           const skinId = Number(state.skinId);
           selectedModId = null;
@@ -2149,7 +2149,7 @@
   }
 
   function requestModsForCurrentSkin() {
-    const state = window.__coralSkinState || {};
+    const state = window.__twosdaySkinState || {};
     const championId = Number(state.championId);
     const skinId = Number(state.skinId);
 
@@ -2189,7 +2189,7 @@
   }
 
   // Request maps - global (not skin-specific)
-  // Backend should look in: %LOCALAPPDATA%\Coral\mods\maps
+  // Backend should look in: %LOCALAPPDATA%\2SDAY\mods\maps
   function requestMaps() {
     if (bridge) bridge.send({ type: "request-maps" });
     if (panel && panel._mapsLoading) {
@@ -2199,7 +2199,7 @@
   }
 
   // Request fonts - global (not skin-specific)
-  // Backend should look in: %LOCALAPPDATA%\Coral\mods\fonts
+  // Backend should look in: %LOCALAPPDATA%\2SDAY\mods\fonts
   function requestFonts() {
     if (bridge) bridge.send({ type: "request-fonts" });
     if (panel && panel._fontsLoading) {
@@ -2209,7 +2209,7 @@
   }
 
   // Request announcers - global (not skin-specific)
-  // Backend should look in: %LOCALAPPDATA%\Coral\mods\announcers
+  // Backend should look in: %LOCALAPPDATA%\2SDAY\mods\announcers
   function requestAnnouncers() {
     if (bridge) bridge.send({ type: "request-announcers" });
     if (panel && panel._announcersLoading) {
@@ -2219,7 +2219,7 @@
   }
 
   // Request category mods - global (not skin-specific)
-  // Backend should look in: %LOCALAPPDATA%\Coral\mods\<category>
+  // Backend should look in: %LOCALAPPDATA%\2SDAY\mods\<category>
   function requestCategoryMods(categoryId) {
     if (!categoryId) return;
     if (bridge) bridge.send({ type: "request-category-mods", category: categoryId });
@@ -2311,7 +2311,7 @@
     // Use the LIVE skin state for clearing / auto-select checks.
     // The response's skinId can be stale if the user navigated away while
     // the request was in flight.
-    const liveSkinId = Number((window.__coralSkinState || {}).skinId) || skinId;
+    const liveSkinId = Number((window.__twosdaySkinState || {}).skinId) || skinId;
 
     // Clear selection when the currently hovered skin differs from the mod's target skin.
     if (selectedModId && selectedModSkinId != null && Number(selectedModSkinId) !== liveSkinId) {

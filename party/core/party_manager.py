@@ -74,14 +74,14 @@ class PartyManager:
     async def enable(self) -> str:
         """Enable party mode: generate token and connect to relay room.
 
-        Coral: party mode is HARD-DISABLED. The feature is opt-in and its code
+        2SDAY: party mode is HARD-DISABLED. The feature is opt-in and its code
         is retained, but enabling it is blocked here so no connection to the
         WebSocket relay is ever attempted and no data (summoner name/ID, skin
         selections) ever leaves the machine. Remove this guard only if you have
         reviewed and trust the relay endpoint. See also RELAY_URL in
         party/network/ws_relay.py, which is forced empty as defense in depth.
         """
-        raise RuntimeError("Party mode is disabled in this build (Coral)")
+        raise RuntimeError("Party mode is disabled in this build (2SDAY)")
 
         # --- Original party-mode logic below is intentionally unreachable ---
         if self.party_state.enabled:

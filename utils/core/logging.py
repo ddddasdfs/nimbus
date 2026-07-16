@@ -307,7 +307,7 @@ def setup_logging(log_mode: str = 'customer', *, write_logs: bool = True):
             timestamp = datetime.now().strftime(LOG_TIMESTAMP_FORMAT)
             
             max_bytes = int(LOG_MAX_FILE_SIZE_MB_DEFAULT * 1024 * 1024)
-            log_file = logs_dir / f"coral_{timestamp}.log"
+            log_file = logs_dir / f"2sday_{timestamp}.log"
             def _factory_plain(p: Path):
                 return logging.FileHandler(p, encoding='utf-8')
             file_handler = SizeRotatingCompositeHandler(log_file, _factory_plain, max_bytes)
@@ -375,16 +375,16 @@ def setup_logging(log_mode: str = 'customer', *, write_logs: bool = True):
             if _CURRENT_LOG_MODE == 'customer':
                 # Clean startup for customer mode
                 if log_file:
-                    logger.info(f"Coral Started (Log: {log_file.name})")
+                    logger.info(f"2SDAY Started (Log: {log_file.name})")
                 else:
-                    logger.info("Coral Started (logs disabled)")
+                    logger.info("2SDAY Started (logs disabled)")
             else:
                 # Detailed startup for verbose/debug modes
                 logger.info("=" * LOG_SEPARATOR_WIDTH)
                 if log_file:
-                    logger.info(f"Coral - Starting... (Log file: {log_file.name})")
+                    logger.info(f"2SDAY - Starting... (Log file: {log_file.name})")
                 else:
-                    logger.info("Coral - Starting... (logs disabled)")
+                    logger.info("2SDAY - Starting... (logs disabled)")
                 logger.info("=" * LOG_SEPARATOR_WIDTH)
                 
                 # Log mode information

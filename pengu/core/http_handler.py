@@ -21,7 +21,7 @@ class HTTPHandler:
 
     Security Note:
         - Browser requests with an Origin header are only allowed from loopback origins.
-        - File-serving routes resolve paths under explicit Coral-owned directories.
+        - File-serving routes resolve paths under explicit 2SDAY-owned directories.
     """
 
     def __init__(self, port: int):

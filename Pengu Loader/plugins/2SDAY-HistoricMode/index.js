@@ -1,16 +1,16 @@
 /**
- * @name CORAL-HistoricMode
- * @author Coral Team
+ * @name 2SDAY-HistoricMode
+ * @author 2SDAY Team
  * @description Historic mode for Pengu Loader
- * @link https://github.com/ddddasdfs/Coral
+ * @link https://github.com/ddddasdfs/2SDAY
  */
 (function initHistoricMode() {
-  const LOG_PREFIX = "[CORAL-HistoricMode]";
+  const LOG_PREFIX = "[2SDAY-HistoricMode]";
   const REWARDS_SELECTOR =
     ".skin-selection-item-information.loyalty-reward-icon--rewards";
   const HISTORIC_FLAG_ASSET_PATH = "historic_flag.png";
   const SHOW_SKIN_NAME_ID = "historic-popup-layer";
-  // Shared bridge (provided by CORAL-SkinMonitor)
+  // Shared bridge (provided by 2SDAY-SkinMonitor)
   let bridge = null;
 
   function waitForBridge() {
@@ -19,7 +19,7 @@
       const interval = 50;
       let elapsed = 0;
       const check = () => {
-        if (window.__coralBridge) return resolve(window.__coralBridge);
+        if (window.__twosdayBridge) return resolve(window.__twosdayBridge);
         elapsed += interval;
         if (elapsed >= timeout) return reject(new Error("Bridge not available"));
         setTimeout(check, interval);
@@ -210,7 +210,7 @@
 
   // Inject CSS styles for lol-uikit-dialog-frame
   function injectDialogFrameStyles() {
-    const styleId = "coral-historic-mode-dialog-frame-styles";
+    const styleId = "twosday-historic-mode-dialog-frame-styles";
     if (document.getElementById(styleId)) {
       return; // Styles already injected
     }
@@ -859,7 +859,7 @@
   function handleCustomModStateUpdate(data) {
     if (data.active && data.modName) {
       // Only show popup if the user is currently viewing the mod's target skin
-      const currentSkinId = Number((window.__coralSkinState || {}).skinId);
+      const currentSkinId = Number((window.__twosdaySkinState || {}).skinId);
       const modSkinId = data.skinId ? Number(data.skinId) : null;
       if (modSkinId && currentSkinId && modSkinId !== currentSkinId) {
         // User already navigated away — don't show popup

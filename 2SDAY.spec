@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec file for Coral
+PyInstaller spec file for 2SDAY
 Builds a standalone executable with Windows UI API support
 """
 
@@ -99,7 +99,7 @@ except Exception as e:
 # leak local test data into the shipped installer.
 pengu_loader_dir = Path('Pengu Loader')
 PENGU_LOADER_EXCLUDED_NAMES = {
-    'coral.log',
+    '2sday.log',
     'crash.log',
     'config',
     'datastore',
@@ -419,7 +419,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='Coral',
+    name='2SDAY',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -442,5 +442,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='Coral',
+    name='2SDAY',
 )

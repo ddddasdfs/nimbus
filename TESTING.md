@@ -1,9 +1,9 @@
-# Coral — First-Run Safety Test
+# 2SDAY — First-Run Safety Test
 
-A step-by-step checklist for verifying, on real hardware, that Coral behaves as the
+A step-by-step checklist for verifying, on real hardware, that 2SDAY behaves as the
 audit expects: it talks only to the handful of hosts a skin changer needs, writes
 only where it should, and doesn't re-introduce anything that was removed (analytics,
-remote code, party relay). Run this the first time you build/run Coral, and again
+remote code, party relay). Run this the first time you build/run 2SDAY, and again
 after any change to the download, injection, or Pengu integration code.
 
 > Do this on a **VM or a spare machine**, not your daily driver. Skin injection is
@@ -15,7 +15,7 @@ after any change to the download, injection, or Pengu integration code.
 
 ## 0. What "pass" looks like
 
-**Network — Coral should only ever connect to:**
+**Network — 2SDAY should only ever connect to:**
 
 | Host | Why |
 |------|-----|
@@ -34,30 +34,30 @@ after any change to the download, injection, or Pengu integration code.
 | Any other unexpected domain/IP | Unknown egress — worth explaining before trusting the build |
 
 > League of Legends and the Riot client generate their **own** traffic to Riot/Amazon
-> servers while running. That is League, not Coral — don't count it against Coral. The
-> point is to confirm *Coral's* traffic matches the allowlist above.
+> servers while running. That is League, not 2SDAY — don't count it against 2SDAY. The
+> point is to confirm *2SDAY's* traffic matches the allowlist above.
 
-**Files** — Coral should only write under:
-`%LOCALAPPDATA%\Coral\...`, the **League install dir** (Pengu drops a `d3d9.dll` proxy
+**Files** — 2SDAY should only write under:
+`%LOCALAPPDATA%\2SDAY\...`, the **League install dir** (Pengu drops a `d3d9.dll` proxy
 into the client folder — expected), and, only if you enable autostart, a Task Scheduler
-task named `Coral`. Nothing in `System32`, Startup folders, or unrelated locations.
+task named `2SDAY`. Nothing in `System32`, Startup folders, or unrelated locations.
 
 ---
 
 ## 1. Set up the isolated environment
 
 - [ ] Fresh Windows 10/11 VM (or spare PC). Install League of Legends. Log in once with a **throwaway account**.
-- [ ] Take a **VM snapshot** labelled "clean, pre-Coral".
+- [ ] Take a **VM snapshot** labelled "clean, pre-2SDAY".
 - [ ] Install monitoring tools (all free):
   - [ ] **Wireshark** — https://www.wireshark.org (network capture)
-  - [ ] **TCPView** (Sysinternals) — per-process connections, easiest for attributing traffic to Coral
+  - [ ] **TCPView** (Sysinternals) — per-process connections, easiest for attributing traffic to 2SDAY
   - [ ] **Process Monitor (Procmon)** (Sysinternals) — file/registry writes
-  - [ ] (optional) **Process Explorer** (Sysinternals) — see child processes Coral spawns
+  - [ ] (optional) **Process Explorer** (Sysinternals) — see child processes 2SDAY spawns
 
-## 2. Build Coral from the audited source
+## 2. Build 2SDAY from the audited source
 
-- [ ] Build on a **separate dev machine** (or the VM) from this repo — do not download a prebuilt Coral.exe from anywhere.
-- [ ] Provide your own signed `cslol-dll.dll` (Coral hash-pins it; see the DLL prompt on first launch).
+- [ ] Build on a **separate dev machine** (or the VM) from this repo — do not download a prebuilt 2SDAY.exe from anywhere.
+- [ ] Provide your own signed `cslol-dll.dll` (2SDAY hash-pins it; see the DLL prompt on first launch).
 - [ ] Copy the build into the VM.
 
 ## 3. Static sanity re-check (30 seconds, before running)
@@ -77,18 +77,18 @@ From the repo root in the VM (or dev box), confirm the removed things are still 
 - [ ] Start **TCPView** and **Procmon**. In Procmon, set a filter: `Operation is WriteFile` (and later add `RegSetValue`) to reduce noise.
 - [ ] Leave League **closed** for now.
 
-## 5. Launch Coral and watch startup
+## 5. Launch 2SDAY and watch startup
 
-- [ ] Start Coral.
-- [ ] **Admin check:** it should offer a UAC prompt but **not force-quit if you decline**. Try declining once — Coral should keep running (limited mode, logged). Then relaunch and accept, or set `[General] request_admin=false` in `%LOCALAPPDATA%\Coral\config.ini` to skip the prompt.
-- [ ] In **TCPView**, watch the Coral process (`Coral.exe` or `python.exe` for a source run). Every remote endpoint it opens should be on the Section 0 allowlist. Note anything that isn't.
+- [ ] Start 2SDAY.
+- [ ] **Admin check:** it should offer a UAC prompt but **not force-quit if you decline**. Try declining once — 2SDAY should keep running (limited mode, logged). Then relaunch and accept, or set `[General] request_admin=false` in `%LOCALAPPDATA%\2SDAY\config.ini` to skip the prompt.
+- [ ] In **TCPView**, watch the 2SDAY process (`2SDAY.exe` or `python.exe` for a source run). Every remote endpoint it opens should be on the Section 0 allowlist. Note anything that isn't.
 - [ ] Startup will do a hash check + skin sync → expect GitHub / communitydragon connections. **No update-server contact** should occur (the auto-updater is gone).
 
 ## 6. Exercise the real features
 
-With League open and Coral running, drive the actual flow:
+With League open and 2SDAY running, drive the actual flow:
 
-- [ ] Open the client; confirm the Coral plugins load (settings panel, skin wheels).
+- [ ] Open the client; confirm the 2SDAY plugins load (settings panel, skin wheels).
 - [ ] Hover/select skins in champion select (triggers the local bridge + possible skin download).
 - [ ] Download a skin you don't own; start a game (Practice Tool / custom vs bots on the throwaway account) to trigger injection.
 - [ ] Open the in-client Settings panel — confirm the **Discord/Ko-Fi buttons are gone**, only GitHub remains.
@@ -96,17 +96,17 @@ With League open and Coral running, drive the actual flow:
 
 ## 7. Review the captures — the actual verdict
 
-- [ ] In **Wireshark**, look at the collected `server_name` / `dns.qry.name` values. Build the set of hosts Coral's traffic touched. Every one should be on the allowlist. Search the capture explicitly:
+- [ ] In **Wireshark**, look at the collected `server_name` / `dns.qry.name` values. Build the set of hosts 2SDAY's traffic touched. Every one should be on the allowlist. Search the capture explicitly:
   ```
   frame contains "leagueunlocked" or frame contains "unpkg" or frame contains "workers.dev"
   ```
   Expected result: **0 packets**.
-- [ ] In **Procmon**, review WriteFile/RegSetValue events for the Coral process. Confirm writes are confined to `%LOCALAPPDATA%\Coral`, the League client dir (`d3d9.dll` proxy), and — only if you enabled autostart — the `Coral` scheduled task. Flag anything else.
-- [ ] Check `%LOCALAPPDATA%\Coral\logs\` for the startup log: it should show the admin mode, hash/skin sync, and **no** analytics/updater activity.
+- [ ] In **Procmon**, review WriteFile/RegSetValue events for the 2SDAY process. Confirm writes are confined to `%LOCALAPPDATA%\2SDAY`, the League client dir (`d3d9.dll` proxy), and — only if you enabled autostart — the `2SDAY` scheduled task. Flag anything else.
+- [ ] Check `%LOCALAPPDATA%\2SDAY\logs\` for the startup log: it should show the admin mode, hash/skin sync, and **no** analytics/updater activity.
 
 ## 8. Pass / fail
 
-**PASS** if: every Coral connection was on the allowlist; zero packets to the red-flag hosts;
+**PASS** if: every 2SDAY connection was on the allowlist; zero packets to the red-flag hosts;
 file/registry writes stayed in the expected locations; declining admin didn't kill the app.
 
 **INVESTIGATE** if: any unexpected host appears, any write lands outside the expected dirs,

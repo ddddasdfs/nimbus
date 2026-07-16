@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Global constants for Coral
+Global constants for 2SDAY
 All arbitrary values are centralized here for easy tracking and modification
 """
 
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 # =============================================================================
 
 APP_VERSION = "1.2.10"                          # Application version
-APP_USER_AGENT = f"Coral/{APP_VERSION}"  # User-Agent header for HTTP requests
+APP_USER_AGENT = f"2SDAY/{APP_VERSION}"  # User-Agent header for HTTP requests
 
 _CONFIG = configparser.ConfigParser()
 _CONFIG_MTIME: float = 0.0  # Last known modification time of config.ini
@@ -291,16 +291,16 @@ WINDOWS_DPI_AWARENESS_SYSTEM = 1         # PROCESS_SYSTEM_DPI_AWARE
 # =============================================================================
 
 # Lock file name
-LOCK_FILE_NAME = "coral.lock"
+LOCK_FILE_NAME = "2sday.lock"
 
 # NEW: Windows named mutex for single-instance (per-user/session)
 _IS_DEV_BUILD = bool(getattr(sys, "frozen", False)) and (
-    "coraldev" in Path(sys.executable).stem.lower() or "coral-dev" in Path(sys.executable).stem.lower()
+    "2sdaydev" in Path(sys.executable).stem.lower() or "2sday-dev" in Path(sys.executable).stem.lower()
 )
-SINGLE_INSTANCE_MUTEX_NAME = r"Local\CoralDevSingleInstance" if _IS_DEV_BUILD else r"Local\CoralSingleInstance"
+SINGLE_INSTANCE_MUTEX_NAME = r"Local\TwosdayDevSingleInstance" if _IS_DEV_BUILD else r"Local\TwosdaySingleInstance"
 
 # Log file patterns (handles .log files)
-LOG_FILE_PATTERN = "coral_*.log*"
+LOG_FILE_PATTERN = "2sday_*.log*"
 UPDATER_LOG_FILE_PATTERN = "log_updater_*.log*"
 LOG_TIMESTAMP_FORMAT = "%d-%m-%Y_%H-%M-%S"  # European format, Windows-compatible
 
@@ -323,12 +323,12 @@ INTERESTING_PHASES = {
 
 
 # =============================================================================
-# ANALYTICS CONSTANTS  (removed in Coral)
+# ANALYTICS CONSTANTS  (removed in 2SDAY)
 # =============================================================================
 #
-# Upstream Coral sent a periodic "ping" containing the machine's persistent
+# Upstream 2SDAY sent a periodic "ping" containing the machine's persistent
 # Windows Machine GUID to an external analytics server every 5 minutes, on by
-# default and without consent. Coral removes analytics entirely: the analytics/
+# default and without consent. 2SDAY removes analytics entirely: the analytics/
 # package, its background thread, and these constants have all been deleted.
 # No usage data of any kind leaves the machine.
 

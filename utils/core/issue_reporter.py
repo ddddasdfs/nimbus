@@ -6,7 +6,7 @@ Issue Reporter
 Writes a small, human-friendly diagnostics file that summarizes important
 errors and "non-error failure reasons" (e.g., timeouts, settings mismatches).
 
-File: %LOCALAPPDATA%\\Coral\\coral_diagnostics.txt
+File: %LOCALAPPDATA%\\2SDAY\\2sday_diagnostics.txt
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from utils.core.paths import get_user_data_dir
 _LOCK = threading.Lock()
 _LAST: Dict[str, float] = {}  # naive dedupe: key -> last timestamp
 
-# Keep coral_diagnostics.txt focused on the two settings-related tuning problems that commonly
+# Keep 2sday_diagnostics.txt focused on the two settings-related tuning problems that commonly
 # confuse users. Everything else should go to the normal logs.
 _ALLOWED_CODES = {
     'AUTO_RESUME_TRIGGERED',  # Suggest increasing Monitor Auto-Resume Timeout
@@ -33,7 +33,7 @@ _ALLOWED_CODES = {
 def _issues_path():
     base_dir = get_user_data_dir()
     base_dir.mkdir(parents=True, exist_ok=True)
-    return base_dir / "coral_diagnostics.txt"
+    return base_dir / "2sday_diagnostics.txt"
 
 
 def report_issue(
@@ -93,7 +93,7 @@ def report_issue(
 
 
 def read_issues_tail(*, max_lines: int = 60) -> list[str]:
-    """Read the last N lines from coral_diagnostics.txt (safe, never raises)."""
+    """Read the last N lines from 2sday_diagnostics.txt (safe, never raises)."""
     try:
         p = _issues_path()
         if not p.exists():
@@ -147,7 +147,7 @@ def clear_issue(code: str) -> bool:
 
 
 def clear_issues() -> bool:
-    """Clear coral_diagnostics.txt (safe, never raises). Returns True if cleared."""
+    """Clear 2sday_diagnostics.txt (safe, never raises). Returns True if cleared."""
     try:
         with _LOCK:
             p = _issues_path()

@@ -20,20 +20,30 @@
   const CSS_RULES = `
     #${STAR_ID} {
       position: absolute;
-      height: 30px;
-      width: 30px;
-      line-height: 30px;
+      height: 34px;
+      width: 34px;
+      line-height: 32px;
       text-align: center;
-      font-size: 24px;
+      font-size: 22px;
       cursor: pointer;
       pointer-events: auto;
       z-index: 10;
-      text-shadow: 0 0 4px rgba(0,0,0,0.9);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(1,10,19,0.78) 0%, rgba(1,10,19,0.55) 68%, rgba(1,10,19,0.05) 100%);
+      border: 1px solid #785a28;
+      box-shadow: 0 0 6px rgba(0,0,0,0.65);
       -webkit-user-select: none;
       user-select: none;
-      transition: transform 0.1s ease;
+      transition: transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     }
-    #${STAR_ID}:hover { transform: scale(1.15); }
+    #${STAR_ID}:hover {
+      transform: scale(1.15);
+      border-color: #c8aa6e;
+    }
+    #${STAR_ID}.pinned {
+      border-color: #f0c453;
+      box-shadow: 0 0 11px rgba(240,190,70,0.8), inset 0 0 7px rgba(240,190,70,0.35);
+    }
   `;
 
   function waitForBridge() {
@@ -140,8 +150,11 @@
     if (!starElement) return;
     const pinnedHere = isCurrentPinned();
     starElement.textContent = pinnedHere ? STAR_FILLED : STAR_EMPTY; // textContent = no injection surface
-    starElement.style.color = pinnedHere ? "#f0c060" : "#d0d0d0";
-    starElement.style.opacity = pinnedHere ? "1" : "0.8";
+    starElement.classList.toggle("pinned", pinnedHere);
+    starElement.style.color = pinnedHere ? "#ffd65c" : "#ece3d0";
+    starElement.style.textShadow = pinnedHere
+      ? "0 0 8px rgba(255,200,70,0.95), 0 0 2px rgba(0,0,0,0.9)"
+      : "0 0 3px rgba(0,0,0,0.95)";
     if (pinnedHere) {
       starElement.title = "Pinned favorite. Click to unpin.";
     } else if (championHasPin()) {

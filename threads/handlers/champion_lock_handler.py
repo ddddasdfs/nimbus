@@ -195,17 +195,12 @@ class ChampionLockHandler:
         later manual skin change still backs the pin off via check_and_deactivate.
         """
         try:
-            from utils.core.favorites import get_active_pin
+            from utils.core.favorites import apply_pin_to_state
 
-            pin_value = get_active_pin(champion_id)
-            if pin_value is None:
-                return False
-
-            self.state.historic_mode_active = True
-            self.state.historic_skin_id = pin_value
-            self.state.historic_first_detection_done = True
-            log.info(f"[FAVORITE] Applied pinned favorite for champion {champion_id}: {pin_value}")
-            return True
+            if apply_pin_to_state(self.state, champion_id):
+                log.info(f"[FAVORITE] Applied pinned favorite for champion {champion_id}: {self.state.historic_skin_id}")
+                return True
+            return False
         except Exception as e:
             log.debug(f"[FAVORITE] Failed to apply pinned favorite on lock: {e}")
             return False

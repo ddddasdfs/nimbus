@@ -95,6 +95,25 @@ def get_active_pin(champion_id: int) -> Optional[Union[int, str]]:
         return None
 
 
+def apply_pin_to_state(state, champion_id: int) -> bool:
+    """Activate this champion's pinned favorite on the shared state, if one is set.
+
+    Sets the historic-injection fields (the pin rides that path) plus the pin-specific
+    fields that let the pin win over the client's remembered skin. Returns True if a
+    pin was applied. pin_baseline_skin_id is left None here and captured on the first
+    skin detection so the pin only backs off once the user picks a different skin.
+    """
+    pin = get_active_pin(champion_id)
+    if pin is None:
+        return False
+    state.historic_mode_active = True
+    state.historic_skin_id = pin
+    state.historic_first_detection_done = True
+    state.pin_mode_active = True
+    state.pin_baseline_skin_id = None
+    return True
+
+
 def resolve_auto_apply_value(champion_id: int, favorites_enabled: bool,
                              favorites_map: Dict[str, Union[int, str]],
                              historic_map: Dict[str, Union[int, str]]) -> Optional[Union[int, str]]:

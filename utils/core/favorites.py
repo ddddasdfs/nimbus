@@ -78,6 +78,23 @@ def clear_favorite(champion_id: int) -> None:
         pass
 
 
+def get_active_pin(champion_id: int) -> Optional[Union[int, str]]:
+    """Return this champion's pinned favorite if auto-apply is enabled, else None.
+
+    Convenience wrapper used by the champion-lock paths so a pin can be applied the
+    moment a champion is locked, independent of the historic first-detection gate.
+    """
+    try:
+        from config import get_config_option
+        enabled = (get_config_option("General", "favorites_enabled", "true") or "true").strip().lower() \
+            not in ("0", "false", "no", "off")
+        if not enabled:
+            return None
+        return get_favorite_for_champion(champion_id)
+    except Exception:
+        return None
+
+
 def resolve_auto_apply_value(champion_id: int, favorites_enabled: bool,
                              favorites_map: Dict[str, Union[int, str]],
                              historic_map: Dict[str, Union[int, str]]) -> Optional[Union[int, str]]:

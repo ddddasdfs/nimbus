@@ -144,7 +144,10 @@ class ChampionLockHandler:
             self.state.historic_first_detection_done = False
         except Exception:
             pass
-        
+
+        # Apply pinned favorite (if any) for the newly-locked champion.
+        self._apply_pinned_favorite_on_lock(new_champ_id)
+
         # Clear cache
         if self.state.ui_skin_thread:
             try:
@@ -183,6 +186,30 @@ class ChampionLockHandler:
         
         log.info(f"[exchange] Champion exchange complete - ready for {new_champ_label}")
     
+    def _apply_pinned_favorite_on_lock(self, champion_id: int) -> bool:
+        """If this champion has a pinned favorite (and auto-apply is enabled), activate it now.
+
+        Runs at champion-lock time so the pin applies independently of the historic
+        first-detection gate. Returns True if a pin was applied. Sets
+        historic_first_detection_done so the historic handler won't re-evaluate; a
+        later manual skin change still backs the pin off via check_and_deactivate.
+        """
+        try:
+            from utils.core.favorites import get_active_pin
+
+            pin_value = get_active_pin(champion_id)
+            if pin_value is None:
+                return False
+
+            self.state.historic_mode_active = True
+            self.state.historic_skin_id = pin_value
+            self.state.historic_first_detection_done = True
+            log.info(f"[FAVORITE] Applied pinned favorite for champion {champion_id}: {pin_value}")
+            return True
+        except Exception as e:
+            log.debug(f"[FAVORITE] Failed to apply pinned favorite on lock: {e}")
+            return False
+
     def on_own_champion_locked(self, champion_id: int, champion_label: str, old_champ_id: Optional[int] = None):
         """Handle own champion lock event - triggers detection/UI pipeline if needed"""
         # Check if pipeline should trigger
@@ -250,8 +277,11 @@ class ChampionLockHandler:
             self.state.historic_skin_id = None
             self.state.historic_first_detection_done = False
             log.debug(f"[lock:champ] Reset historic mode state for new champion lock")
-            
-            # Broadcast deactivated state
+
+            # Apply pinned favorite (if any) now that the champion is locked.
+            self._apply_pinned_favorite_on_lock(champion_id)
+
+            # Broadcast state (active if a pin was applied, otherwise deactivated)
             try:
                 if self.state and hasattr(self.state, 'ui_skin_thread') and self.state.ui_skin_thread:
                     self.state.ui_skin_thread._broadcast_historic_state()

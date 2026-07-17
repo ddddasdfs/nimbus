@@ -543,6 +543,102 @@
       transform: translateY(1px);
     }
 
+    #${FLYOUT_ID} .settings-emotes-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    #${FLYOUT_ID} .settings-emotes-empty {
+      font-size: 12px;
+      color: #7a7259;
+      line-height: 1.5;
+      padding: 6px 2px;
+    }
+    #${FLYOUT_ID} .settings-emotes-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 8px;
+      background: linear-gradient(to bottom, rgba(10,20,40,0.55), rgba(1,10,19,0.6));
+      border: 1px solid rgba(120,90,40,0.5);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    #${FLYOUT_ID} .settings-emotes-row:hover {
+      border-color: #c8aa6e;
+    }
+    #${FLYOUT_ID} .settings-emotes-row.active {
+      border-color: #f0c453;
+      box-shadow: 0 0 8px rgba(240,190,70,0.35), inset 0 0 6px rgba(240,190,70,0.12);
+    }
+    #${FLYOUT_ID} .settings-emotes-thumb {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      border: 1px solid #785a28;
+      border-radius: 1px;
+      background-color: #0a1428;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+    #${FLYOUT_ID} .settings-emotes-meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    #${FLYOUT_ID} .settings-emotes-name {
+      color: #c89b3c;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: "Beaufort for LOL", serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #${FLYOUT_ID} .settings-emotes-replaces {
+      color: #8a8272;
+      font-size: 11px;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #${FLYOUT_ID} .settings-emotes-check {
+      flex: 0 0 auto;
+      color: #f0c453;
+      font-size: 15px;
+      width: 16px;
+      text-align: center;
+    }
+    #${FLYOUT_ID} .settings-emotes-sync {
+      align-self: flex-start;
+      margin-top: 6px;
+      padding: 4px 12px;
+      background: #1e2328;
+      border: 1px solid #785a28;
+      border-radius: 2px;
+      color: #c8aa6e;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: "Beaufort for LOL", serif;
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    #${FLYOUT_ID} .settings-emotes-sync:hover {
+      color: #f0e6d2;
+      border-color: #c8aa6e;
+      background: #2a2f35;
+    }
+
     /* Style for the "Add custom mods" dropdown button - match League UI button styling */
     #add-custom-mods-dropdown {
       background: #1E2328 !important;
@@ -1129,6 +1225,67 @@
           }
         }
       });
+    });
+  }
+
+  // --- Custom emotes: catalog list + active selection + auto-apply toggle ---
+  function handleEmotesData(payload) {
+    const enabledBox = document.getElementById("emote-enabled-checkbox");
+    if (enabledBox) enabledBox.checked = payload && payload.enabled === true;
+
+    const list = document.getElementById("nimbus-emotes-list");
+    if (!list) return;
+    const emotes = (payload && payload.emotes) || [];
+    const activeId = payload && payload.activeId;
+    list.innerHTML = "";
+
+    if (emotes.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "settings-emotes-empty";
+      empty.textContent =
+        "No emotes found. Add emote mods to your emote repo, then hit Sync.";
+      list.appendChild(empty);
+      return;
+    }
+
+    emotes.forEach((emote) => {
+      const row = document.createElement("div");
+      row.className = "settings-emotes-row" + (emote.id === activeId ? " active" : "");
+      row.title = "Click to use this emote";
+
+      const thumb = document.createElement("div");
+      thumb.className = "settings-emotes-thumb";
+      if (emote.previewUrl) {
+        thumb.style.backgroundImage = `url("${emote.previewUrl}")`;
+      }
+      row.appendChild(thumb);
+
+      const meta = document.createElement("div");
+      meta.className = "settings-emotes-meta";
+      const nameEl = document.createElement("div");
+      nameEl.className = "settings-emotes-name";
+      nameEl.textContent = emote.name || emote.id; // textContent = no injection surface
+      meta.appendChild(nameEl);
+      if (emote.replaces) {
+        const rep = document.createElement("div");
+        rep.className = "settings-emotes-replaces";
+        rep.textContent = "Replaces: " + emote.replaces;
+        meta.appendChild(rep);
+      }
+      row.appendChild(meta);
+
+      const check = document.createElement("div");
+      check.className = "settings-emotes-check";
+      check.textContent = emote.id === activeId ? "★" : "";
+      row.appendChild(check);
+
+      row.addEventListener("click", () => {
+        // Clicking the active emote clears the selection.
+        const nextId = emote.id === activeId ? null : emote.id;
+        if (bridge) bridge.send({ type: "set-active-emote", id: nextId });
+      });
+
+      list.appendChild(row);
     });
   }
 
@@ -2008,6 +2165,49 @@
     favSection.appendChild(favList);
     form.appendChild(favSection);
     if (bridge) bridge.send({ type: "get-favorites" });
+
+    // Custom emotes section (account-wide: one active emote for every game)
+    const emoteSection = document.createElement("div");
+    emoteSection.className = "settings-section";
+    const emoteLabel = document.createElement("label");
+    emoteLabel.className = "settings-label";
+    emoteLabel.textContent = "Custom emote:";
+    emoteSection.appendChild(emoteLabel);
+
+    const emoteWrapper = document.createElement("div");
+    emoteWrapper.className = "settings-checkbox-wrapper";
+    const emoteCheckbox = document.createElement("input");
+    emoteCheckbox.type = "checkbox";
+    emoteCheckbox.className = "settings-checkbox";
+    emoteCheckbox.id = "emote-enabled-checkbox";
+    emoteCheckbox.addEventListener("change", () => {
+      if (bridge) bridge.send({ type: "set-emote-enabled", enabled: emoteCheckbox.checked });
+    });
+    emoteWrapper.appendChild(emoteCheckbox);
+    const emoteText = document.createElement("span");
+    emoteText.textContent = "Apply my chosen emote in every game";
+    emoteWrapper.appendChild(emoteText);
+    emoteSection.appendChild(emoteWrapper);
+
+    const emoteList = document.createElement("div");
+    emoteList.id = "nimbus-emotes-list";
+    emoteList.className = "settings-emotes-list";
+    emoteSection.appendChild(emoteList);
+
+    const emoteSync = document.createElement("button");
+    emoteSync.type = "button";
+    emoteSync.className = "settings-emotes-sync";
+    emoteSync.textContent = "Sync emotes";
+    emoteSync.title = "Re-download the emote catalog";
+    emoteSync.addEventListener("click", () => {
+      emoteSync.textContent = "Syncing…";
+      if (bridge) bridge.send({ type: "sync-emotes" });
+      setTimeout(() => { emoteSync.textContent = "Sync emotes"; }, 2000);
+    });
+    emoteSection.appendChild(emoteSync);
+
+    form.appendChild(emoteSection);
+    if (bridge) bridge.send({ type: "get-emotes" });
 
     // Game path section
     const pathSection = document.createElement("div");
@@ -3806,6 +4006,7 @@
       bridge.subscribe("settings-data", handleSettingsData);
       bridge.subscribe("settings-saved", handleSettingsSaved);
       bridge.subscribe("favorites-data", handleFavoritesData);
+      bridge.subscribe("emotes-data", handleEmotesData);
       bridge.subscribe("diagnostics-data", handleDiagnosticsData);
       bridge.subscribe("diagnostics-cleared-category", () => requestDiagnostics());
       bridge.subscribe("diagnostics-tracker-cleared", () => requestDiagnostics());

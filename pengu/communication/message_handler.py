@@ -347,6 +347,21 @@ class MessageHandler:
                 "owned": owned,
             })
         emotes.sort(key=lambda e: e["name"].lower())
+
+        # Drop selections that no longer resolve (e.g. stored under an older id scheme,
+        # or an emote missing after a patch). Leaving them would render a raw id in the
+        # UI and silently inject nothing.
+        from utils.core.emotes import set_source_emote, set_target_emote
+        valid = {e["id"] for e in emotes}
+        source_id, target_id = get_source_emote(), get_target_emote()
+        if source_id and source_id not in valid:
+            log.info(f"[EMOTE] Clearing stale source selection: {source_id}")
+            set_source_emote(None)
+            source_id = None
+        if target_id and target_id not in valid:
+            log.info(f"[EMOTE] Clearing stale target selection: {target_id}")
+            set_target_emote(None)
+            target_id = None
         return json.dumps({
             "type": "emotes-data",
             "emotes": emotes,

@@ -76,3 +76,15 @@ def clear_favorite(champion_id: int) -> None:
                 json.dump(m, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
+
+
+def resolve_auto_apply_value(champion_id: int, favorites_enabled: bool,
+                             favorites_map: Dict[str, Union[int, str]],
+                             historic_map: Dict[str, Union[int, str]]) -> Optional[Union[int, str]]:
+    """Precedence: pinned favorite (if enabled) -> historic (last-used) -> None."""
+    key = str(int(champion_id))
+    if favorites_enabled:
+        v = favorites_map.get(key)
+        if v is not None:
+            return v
+    return historic_map.get(key)

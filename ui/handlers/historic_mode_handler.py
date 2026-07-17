@@ -33,8 +33,13 @@ class HistoricModeHandler:
         if skin_id == base_skin_id:
             # Check if there's a historic entry for this champion
             try:
-                from utils.core.historic import get_historic_skin_for_champion, is_custom_mod_path
-                historic_value = get_historic_skin_for_champion(self.state.locked_champ_id)
+                from utils.core.historic import load_historic_map, is_custom_mod_path
+                from utils.core.favorites import load_favorites_map, resolve_auto_apply_value
+                from config import get_config_option
+                _fav_enabled = (get_config_option("General", "favorites_enabled", "true") or "true").strip().lower() not in ("0", "false", "no", "off")
+                historic_value = resolve_auto_apply_value(
+                    self.state.locked_champ_id, _fav_enabled,
+                    load_favorites_map(), load_historic_map())
                 
                 if historic_value is not None:
                     # Activate historic mode

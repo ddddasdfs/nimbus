@@ -549,8 +549,43 @@
       flex-direction: column;
       gap: 6px;
       margin-top: 6px;
-      max-height: 220px;
+      max-height: 160px;
       overflow-y: auto;
+    }
+    #${FLYOUT_ID} .settings-emotes-caption {
+      width: 100%;
+      margin-top: 10px;
+      color: #a09b8c;
+      font-size: 12px;
+      letter-spacing: 0.03em;
+    }
+    #${FLYOUT_ID} .settings-emotes-search {
+      width: 100%;
+      margin-top: 4px;
+      padding: 5px 8px;
+      background: #0a1428;
+      border: 1px solid #5c5b56;
+      border-radius: 2px;
+      color: #f0e6d2;
+      font-size: 12px;
+      font-family: "Beaufort for LOL", serif;
+      box-sizing: border-box;
+    }
+    #${FLYOUT_ID} .settings-emotes-search:focus {
+      outline: none;
+      border-color: #c8aa6e;
+    }
+    #${FLYOUT_ID} .settings-emotes-summary {
+      width: 100%;
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: linear-gradient(to bottom, rgba(10,20,40,0.7), rgba(1,10,19,0.7));
+      border: 1px solid rgba(120,90,40,0.5);
+      border-radius: 2px;
+      color: #f0e6d2;
+      font-size: 12px;
+      font-family: "Beaufort for LOL", serif;
+      line-height: 1.5;
     }
     #${FLYOUT_ID} .settings-emotes-empty {
       font-size: 12px;
@@ -1228,65 +1263,174 @@
     });
   }
 
-  // --- Custom emotes: catalog list + active selection + auto-apply toggle ---
-  function handleEmotesData(payload) {
-    const enabledBox = document.getElementById("emote-enabled-checkbox");
-    if (enabledBox) enabledBox.checked = payload && payload.enabled === true;
+  // --- Custom emotes -----------------------------------------------------------
+  // You can't equip an emote you don't own, so a swap is a PAIR:
+  //   source = the emote you want to see, target = an emote you own (gets overwritten).
+  const EMOTE_MAX_ROWS = 40; // 2000+ emotes: cap the DOM, let search narrow it
+  let emoteCatalog = [];
+  let emoteState = { sourceId: null, targetId: null, enabled: false, harvested: false };
 
-    const list = document.getElementById("nimbus-emotes-list");
+  function emoteNameOf(id) {
+    if (!id) return null;
+    const found = emoteCatalog.find((e) => e.id === id);
+    return found ? found.name : id;
+  }
+
+  function renderEmotePicker(which) {
+    const list = document.getElementById(
+      which === "source" ? "nimbus-emote-source-list" : "nimbus-emote-target-list"
+    );
+    const search = document.getElementById(
+      which === "source" ? "emote-source-search" : "emote-target-search"
+    );
     if (!list) return;
-    const emotes = (payload && payload.emotes) || [];
-    const activeId = payload && payload.activeId;
+
+    const selectedId = which === "source" ? emoteState.sourceId : emoteState.targetId;
+    const query = ((search && search.value) || "").trim().toLowerCase();
     list.innerHTML = "";
 
-    if (emotes.length === 0) {
+    if (!emoteCatalog.length) {
       const empty = document.createElement("div");
       empty.className = "settings-emotes-empty";
-      empty.textContent =
-        "No emotes found. Add emote mods to your emote repo, then hit Sync.";
+      empty.textContent = "No emotes found in your game files.";
       list.appendChild(empty);
       return;
     }
 
-    emotes.forEach((emote) => {
-      const row = document.createElement("div");
-      row.className = "settings-emotes-row" + (emote.id === activeId ? " active" : "");
-      row.title = "Click to use this emote";
+    const matches = query
+      ? emoteCatalog.filter(
+          (e) =>
+            e.name.toLowerCase().includes(query) ||
+            (e.category || "").toLowerCase().includes(query)
+        )
+      : emoteCatalog;
 
-      const thumb = document.createElement("div");
-      thumb.className = "settings-emotes-thumb";
-      if (emote.previewUrl) {
-        thumb.style.backgroundImage = `url("${emote.previewUrl}")`;
-      }
-      row.appendChild(thumb);
+    if (!matches.length) {
+      const none = document.createElement("div");
+      none.className = "settings-emotes-empty";
+      none.textContent = "No emotes match that search.";
+      list.appendChild(none);
+      return;
+    }
+
+    matches.slice(0, EMOTE_MAX_ROWS).forEach((emote) => {
+      const row = document.createElement("div");
+      row.className = "settings-emotes-row" + (emote.id === selectedId ? " active" : "");
+      row.title = emote.id === selectedId ? "Click to clear" : "Click to choose";
 
       const meta = document.createElement("div");
       meta.className = "settings-emotes-meta";
       const nameEl = document.createElement("div");
       nameEl.className = "settings-emotes-name";
-      nameEl.textContent = emote.name || emote.id; // textContent = no injection surface
+      nameEl.textContent = emote.name; // textContent = no injection surface
       meta.appendChild(nameEl);
-      if (emote.replaces) {
-        const rep = document.createElement("div");
-        rep.className = "settings-emotes-replaces";
-        rep.textContent = "Replaces: " + emote.replaces;
-        meta.appendChild(rep);
+      if (emote.category) {
+        const cat = document.createElement("div");
+        cat.className = "settings-emotes-replaces";
+        cat.textContent = emote.category;
+        meta.appendChild(cat);
       }
       row.appendChild(meta);
 
       const check = document.createElement("div");
       check.className = "settings-emotes-check";
-      check.textContent = emote.id === activeId ? "★" : "";
+      check.textContent = emote.id === selectedId ? "★" : "";
       row.appendChild(check);
 
       row.addEventListener("click", () => {
-        // Clicking the active emote clears the selection.
-        const nextId = emote.id === activeId ? null : emote.id;
-        if (bridge) bridge.send({ type: "set-active-emote", id: nextId });
+        const nextId = emote.id === selectedId ? null : emote.id;
+        if (bridge) {
+          bridge.send({
+            type: which === "source" ? "set-source-emote" : "set-target-emote",
+            id: nextId,
+          });
+        }
       });
-
       list.appendChild(row);
     });
+
+    if (matches.length > EMOTE_MAX_ROWS) {
+      const more = document.createElement("div");
+      more.className = "settings-emotes-empty";
+      more.textContent = `Showing ${EMOTE_MAX_ROWS} of ${matches.length} — search to narrow it down.`;
+      list.appendChild(more);
+    }
+  }
+
+  function renderEmoteSummary() {
+    const el = document.getElementById("nimbus-emote-summary");
+    if (!el) return;
+    el.innerHTML = "";
+
+    if (!emoteState.harvested) {
+      el.textContent = "Prepare emotes first (one-time, ~1-2 min).";
+      return;
+    }
+    const src = emoteNameOf(emoteState.sourceId);
+    const tgt = emoteNameOf(emoteState.targetId);
+    if (!src || !tgt) {
+      el.textContent = "Pick the emote you want, and one you own to replace.";
+      return;
+    }
+    const star = document.createElement("span");
+    star.className = "fav-b-star";
+    star.textContent = "★";
+    const name = document.createElement("span");
+    name.className = "settings-emotes-name";
+    name.textContent = src;
+    const tail = document.createElement("span");
+    tail.textContent = ` shows when you use “${tgt}”`;
+    el.append(star, " You'll see ", name, tail);
+    if (!emoteState.enabled) {
+      const off = document.createElement("div");
+      off.className = "settings-emotes-replaces";
+      off.textContent = "Turn on the checkbox above to apply it.";
+      el.appendChild(off);
+    }
+  }
+
+  function renderEmoteHarvest() {
+    const btn = document.getElementById("nimbus-emote-harvest");
+    if (!btn) return;
+    btn.textContent = emoteState.harvested ? "Re-prepare emotes" : "Prepare emotes";
+    btn.disabled = false;
+  }
+
+  function handleEmotesData(payload) {
+    if (!payload) return;
+    emoteCatalog = payload.emotes || [];
+    emoteState = {
+      sourceId: payload.sourceId || null,
+      targetId: payload.targetId || null,
+      enabled: payload.enabled === true,
+      harvested: payload.harvested === true,
+    };
+
+    const enabledBox = document.getElementById("emote-enabled-checkbox");
+    if (enabledBox) enabledBox.checked = emoteState.enabled;
+
+    renderEmotePicker("source");
+    renderEmotePicker("target");
+    renderEmoteSummary();
+    renderEmoteHarvest();
+  }
+
+  function handleEmoteHarvest(payload) {
+    const btn = document.getElementById("nimbus-emote-harvest");
+    const el = document.getElementById("nimbus-emote-summary");
+    if (!payload) return;
+    if (btn && !payload.done) {
+      btn.disabled = true;
+      btn.textContent = `Preparing… ${payload.percent || 0}%`;
+    }
+    if (el && !payload.done) {
+      el.textContent = payload.message || "Preparing emotes…";
+    }
+    if (payload.done) {
+      // emotes-data follows and re-renders everything
+      if (btn) btn.disabled = false;
+      if (el && payload.ok === false) el.textContent = "Emote preparation failed — see the log.";
+    }
   }
 
   function handleSettingsData(payload) {
@@ -2166,7 +2310,7 @@
     form.appendChild(favSection);
     if (bridge) bridge.send({ type: "get-favorites" });
 
-    // Custom emotes section (account-wide: one active emote for every game)
+    // Custom emotes section (account-wide: one swap applied to every game)
     const emoteSection = document.createElement("div");
     emoteSection.className = "settings-section";
     const emoteLabel = document.createElement("label");
@@ -2185,26 +2329,51 @@
     });
     emoteWrapper.appendChild(emoteCheckbox);
     const emoteText = document.createElement("span");
-    emoteText.textContent = "Apply my chosen emote in every game";
+    emoteText.textContent = "Apply my emote swap in every game";
     emoteWrapper.appendChild(emoteText);
     emoteSection.appendChild(emoteWrapper);
 
-    const emoteList = document.createElement("div");
-    emoteList.id = "nimbus-emotes-list";
-    emoteList.className = "settings-emotes-list";
-    emoteSection.appendChild(emoteList);
+    const emoteSummary = document.createElement("div");
+    emoteSummary.id = "nimbus-emote-summary";
+    emoteSummary.className = "settings-emotes-summary";
+    emoteSection.appendChild(emoteSummary);
 
-    const emoteSync = document.createElement("button");
-    emoteSync.type = "button";
-    emoteSync.className = "settings-emotes-sync";
-    emoteSync.textContent = "Sync emotes";
-    emoteSync.title = "Re-download the emote catalog";
-    emoteSync.addEventListener("click", () => {
-      emoteSync.textContent = "Syncing…";
-      if (bridge) bridge.send({ type: "sync-emotes" });
-      setTimeout(() => { emoteSync.textContent = "Sync emotes"; }, 2000);
+    // Picker builder: a caption, a search box and a scrollable result list.
+    const buildPicker = (which, caption, placeholder) => {
+      const cap = document.createElement("div");
+      cap.className = "settings-emotes-caption";
+      cap.textContent = caption;
+      emoteSection.appendChild(cap);
+
+      const search = document.createElement("input");
+      search.type = "text";
+      search.className = "settings-emotes-search";
+      search.id = which === "source" ? "emote-source-search" : "emote-target-search";
+      search.placeholder = placeholder;
+      search.addEventListener("input", () => renderEmotePicker(which));
+      emoteSection.appendChild(search);
+
+      const list = document.createElement("div");
+      list.id = which === "source" ? "nimbus-emote-source-list" : "nimbus-emote-target-list";
+      list.className = "settings-emotes-list";
+      emoteSection.appendChild(list);
+    };
+
+    buildPicker("source", "Emote you want to see:", "Search 2000+ emotes…");
+    buildPicker("target", "Emote you own to replace:", "Search the emote you'll equip…");
+
+    const emoteHarvest = document.createElement("button");
+    emoteHarvest.type = "button";
+    emoteHarvest.className = "settings-emotes-sync";
+    emoteHarvest.id = "nimbus-emote-harvest";
+    emoteHarvest.textContent = "Prepare emotes";
+    emoteHarvest.title = "One-time: read the emotes out of your game files (~1-2 min)";
+    emoteHarvest.addEventListener("click", () => {
+      emoteHarvest.disabled = true;
+      emoteHarvest.textContent = "Preparing…";
+      if (bridge) bridge.send({ type: "harvest-emotes" });
     });
-    emoteSection.appendChild(emoteSync);
+    emoteSection.appendChild(emoteHarvest);
 
     form.appendChild(emoteSection);
     if (bridge) bridge.send({ type: "get-emotes" });
@@ -4007,6 +4176,7 @@
       bridge.subscribe("settings-saved", handleSettingsSaved);
       bridge.subscribe("favorites-data", handleFavoritesData);
       bridge.subscribe("emotes-data", handleEmotesData);
+      bridge.subscribe("emote-harvest", handleEmoteHarvest);
       bridge.subscribe("diagnostics-data", handleDiagnosticsData);
       bridge.subscribe("diagnostics-cleared-category", () => requestDiagnostics());
       bridge.subscribe("diagnostics-tracker-cleared", () => requestDiagnostics());

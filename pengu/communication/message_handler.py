@@ -207,10 +207,14 @@ class MessageHandler:
         # Custom emote messages
         elif payload_type == "get-emotes":
             self._handle_get_emotes(payload)
-        elif payload_type == "set-active-emote":
-            self._handle_set_active_emote(payload)
+        elif payload_type == "set-source-emote":
+            self._handle_set_source_emote(payload)
+        elif payload_type == "set-target-emote":
+            self._handle_set_target_emote(payload)
         elif payload_type == "set-emote-enabled":
             self._handle_set_emote_enabled(payload)
+        elif payload_type == "harvest-emotes":
+            self._handle_harvest_emotes(payload)
         elif payload_type == "sync-emotes":
             self._handle_sync_emotes(payload)
         # Party mode messages
@@ -257,26 +261,22 @@ class MessageHandler:
             self._send_response(json.dumps({"type": "favorite-unpinned", "success": False, "error": str(e)}))
 
     def _emotes_payload(self) -> str:
-        """Current emote catalog + selection, as an emotes-data message."""
-        from utils.core.emotes import load_catalog, get_active_emote, is_emote_enabled
+        """Emote catalog (from the game's own files) + the current source/target choice."""
+        from utils.core.emote_assets import is_harvested
+        from utils.core.emote_catalog import load_game_emotes
+        from utils.core.emotes import get_source_emote, get_target_emote, is_emote_enabled
 
-        emotes = []
-        for e in load_catalog():
-            emotes.append({
-                "id": e.id,
-                "name": e.name,
-                "replaces": e.replaces,
-                # Previews are served from the local loopback server only.
-                "previewUrl": (
-                    f"http://127.0.0.1:{self.port}/emote-asset/{e.preview}"
-                    if e.preview else None
-                ),
-            })
+        emotes = [
+            {"id": e.id, "name": e.name, "category": e.category}
+            for e in load_game_emotes()
+        ]
         return json.dumps({
             "type": "emotes-data",
             "emotes": emotes,
-            "activeId": get_active_emote(),
+            "sourceId": get_source_emote(),
+            "targetId": get_target_emote(),
             "enabled": is_emote_enabled(),
+            "harvested": is_harvested(),
         })
 
     def _handle_get_emotes(self, payload: dict) -> None:
@@ -286,35 +286,82 @@ class MessageHandler:
         except Exception as e:
             log.debug(f"[EMOTE] get-emotes failed: {e}")
             self._send_response(json.dumps({
-                "type": "emotes-data", "emotes": [], "activeId": None, "enabled": False
+                "type": "emotes-data", "emotes": [], "sourceId": None,
+                "targetId": None, "enabled": False, "harvested": False,
             }))
 
-    def _handle_set_active_emote(self, payload: dict) -> None:
-        """Set the active emote. Unknown ids clear the selection."""
+    def _set_emote_choice(self, payload: dict, which: str) -> None:
+        """Shared handler for source/target selection. Unknown ids clear the choice."""
         try:
-            from utils.core.emotes import set_active_emote, get_catalog_entry
+            from utils.core.emote_catalog import get_game_emote
+            from utils.core.emotes import set_source_emote, set_target_emote
 
             emote_id = payload.get("id")
-            if emote_id is not None and get_catalog_entry(str(emote_id)) is None:
+            if emote_id is not None and get_game_emote(str(emote_id)) is None:
                 log.warning(f"[EMOTE] Ignoring unknown emote id: {emote_id}")
                 emote_id = None
-            set_active_emote(str(emote_id) if emote_id else None)
-            log.info(f"[EMOTE] Active emote set to: {emote_id}")
+            value = str(emote_id) if emote_id else None
+            (set_source_emote if which == "source" else set_target_emote)(value)
+            log.info(f"[EMOTE] {which} emote set to: {value}")
             self._send_response(self._emotes_payload())
         except Exception as e:
-            log.warning(f"[EMOTE] set-active-emote failed: {e}")
+            log.warning(f"[EMOTE] set-{which}-emote failed: {e}")
+
+    def _handle_set_source_emote(self, payload: dict) -> None:
+        """The emote you want to see."""
+        self._set_emote_choice(payload, "source")
+
+    def _handle_set_target_emote(self, payload: dict) -> None:
+        """The emote you own, whose assets get overwritten."""
+        self._set_emote_choice(payload, "target")
 
     def _handle_set_emote_enabled(self, payload: dict) -> None:
-        """Toggle emote auto-apply."""
+        """Toggle applying the emote swap in every game."""
         try:
             from utils.core.emotes import set_emote_enabled
 
             enabled = bool(payload.get("enabled", False))
             set_emote_enabled(enabled)
-            log.info(f"[EMOTE] Auto-apply set to: {enabled}")
+            log.info(f"[EMOTE] Emote swap enabled: {enabled}")
             self._send_response(self._emotes_payload())
         except Exception as e:
             log.warning(f"[EMOTE] set-emote-enabled failed: {e}")
+
+    def _handle_harvest_emotes(self, payload: dict) -> None:
+        """Harvest emote assets from the game files (slow, one-time).
+
+        Runs on a worker thread so the bridge stays responsive; progress is pushed as
+        `emote-harvest` messages and a fresh `emotes-data` is sent when finished.
+        """
+        import threading
+
+        def _run() -> None:
+            def _progress(percent: int, message: str) -> None:
+                try:
+                    self._send_response(json.dumps({
+                        "type": "emote-harvest", "percent": percent,
+                        "message": message, "done": False,
+                    }))
+                except Exception:
+                    pass
+
+            ok = False
+            try:
+                from utils.core.emote_assets import harvest
+                ok = harvest(_progress)
+            except Exception as e:  # noqa: BLE001
+                log.warning(f"[EMOTE] harvest failed: {e}")
+            try:
+                self._send_response(json.dumps({
+                    "type": "emote-harvest", "percent": 100 if ok else 0,
+                    "message": "Emotes ready" if ok else "Harvest failed",
+                    "done": True, "ok": ok,
+                }))
+                self._send_response(self._emotes_payload())
+            except Exception:
+                pass
+
+        threading.Thread(target=_run, daemon=True, name="EmoteHarvest").start()
 
     def _handle_sync_emotes(self, payload: dict) -> None:
         """Re-read the emote catalog from the local game files, then return it.

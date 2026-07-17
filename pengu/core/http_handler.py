@@ -120,7 +120,11 @@ class HTTPHandler:
             # Handle asset requests
             elif path_clean.startswith("/asset/"):
                 return self._handle_asset_request(path_clean, cors_headers)
-            
+
+            # Handle emote repo assets (previews)
+            elif path_clean.startswith("/emote-asset/"):
+                return self._handle_emote_asset_request(path_clean, cors_headers)
+
             # Handle plugin file requests
             elif path_clean.startswith("/plugin/"):
                 return self._handle_plugin_request(path_clean, cors_headers)
@@ -194,6 +198,40 @@ class HTTPHandler:
             )
         return None
     
+    def _handle_emote_asset_request(self, path_clean: str, cors_headers: dict[str, str]) -> Optional[tuple]:
+        """Serve files from the synced emote repo (preview images) over loopback.
+
+        Path-checked against the emotes dir so a crafted request cannot escape it.
+        """
+        try:
+            from utils.core.emotes import emotes_dir
+
+            rel = unquote(path_clean.replace("/emote-asset/", ""))
+            base = emotes_dir()
+            file_path = base / rel
+
+            if not self._is_safe_path(base, file_path):
+                log.warning(f"[SkinMonitor] Rejected unsafe emote asset path: {rel}")
+                return None
+            if not file_path.is_file():
+                return None
+
+            content_type = self._get_content_type(file_path)
+            with open(file_path, "rb") as f:
+                file_data = f.read()
+            return (
+                200,
+                {
+                    "Content-Type": content_type,
+                    **cors_headers,
+                    "Cache-Control": "public, max-age=3600"
+                },
+                file_data
+            )
+        except Exception as e:
+            log.debug(f"[SkinMonitor] Emote asset request failed: {e}")
+            return None
+
     def _handle_plugin_request(self, path_clean: str, cors_headers: dict[str, str]) -> Optional[tuple]:
         """Handle plugin file requests"""
         plugin_path = path_clean.replace("/plugin/", "")

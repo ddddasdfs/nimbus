@@ -204,6 +204,15 @@ class MessageHandler:
             self._handle_unpin_favorite(payload)
         elif payload_type == "get-favorites":
             self._handle_get_favorites(payload)
+        # Custom emote messages
+        elif payload_type == "get-emotes":
+            self._handle_get_emotes(payload)
+        elif payload_type == "set-active-emote":
+            self._handle_set_active_emote(payload)
+        elif payload_type == "set-emote-enabled":
+            self._handle_set_emote_enabled(payload)
+        elif payload_type == "sync-emotes":
+            self._handle_sync_emotes(payload)
         # Party mode messages
         elif payload_type == "party-enable":
             self._handle_party_enable(payload)
@@ -246,6 +255,78 @@ class MessageHandler:
             self._send_response(json.dumps({"type": "favorite-unpinned", "success": True, "championId": champ}))
         except Exception as e:
             self._send_response(json.dumps({"type": "favorite-unpinned", "success": False, "error": str(e)}))
+
+    def _emotes_payload(self) -> str:
+        """Current emote catalog + selection, as an emotes-data message."""
+        from utils.core.emotes import load_catalog, get_active_emote, is_emote_enabled
+
+        emotes = []
+        for e in load_catalog():
+            emotes.append({
+                "id": e.id,
+                "name": e.name,
+                "replaces": e.replaces,
+                # Previews are served from the local loopback server only.
+                "previewUrl": (
+                    f"http://127.0.0.1:{self.port}/emote-asset/{e.preview}"
+                    if e.preview else None
+                ),
+            })
+        return json.dumps({
+            "type": "emotes-data",
+            "emotes": emotes,
+            "activeId": get_active_emote(),
+            "enabled": is_emote_enabled(),
+        })
+
+    def _handle_get_emotes(self, payload: dict) -> None:
+        """Return the emote catalog + current selection."""
+        try:
+            self._send_response(self._emotes_payload())
+        except Exception as e:
+            log.debug(f"[EMOTE] get-emotes failed: {e}")
+            self._send_response(json.dumps({
+                "type": "emotes-data", "emotes": [], "activeId": None, "enabled": False
+            }))
+
+    def _handle_set_active_emote(self, payload: dict) -> None:
+        """Set the active emote. Unknown ids clear the selection."""
+        try:
+            from utils.core.emotes import set_active_emote, get_catalog_entry
+
+            emote_id = payload.get("id")
+            if emote_id is not None and get_catalog_entry(str(emote_id)) is None:
+                log.warning(f"[EMOTE] Ignoring unknown emote id: {emote_id}")
+                emote_id = None
+            set_active_emote(str(emote_id) if emote_id else None)
+            log.info(f"[EMOTE] Active emote set to: {emote_id}")
+            self._send_response(self._emotes_payload())
+        except Exception as e:
+            log.warning(f"[EMOTE] set-active-emote failed: {e}")
+
+    def _handle_set_emote_enabled(self, payload: dict) -> None:
+        """Toggle emote auto-apply."""
+        try:
+            from utils.core.emotes import set_emote_enabled
+
+            enabled = bool(payload.get("enabled", False))
+            set_emote_enabled(enabled)
+            log.info(f"[EMOTE] Auto-apply set to: {enabled}")
+            self._send_response(self._emotes_payload())
+        except Exception as e:
+            log.warning(f"[EMOTE] set-emote-enabled failed: {e}")
+
+    def _handle_sync_emotes(self, payload: dict) -> None:
+        """Re-sync the emote repo, then return the refreshed catalog."""
+        try:
+            from utils.core.emote_sync import sync_emotes
+            sync_emotes()
+        except Exception as e:
+            log.warning(f"[EMOTE] sync-emotes failed: {e}")
+        try:
+            self._send_response(self._emotes_payload())
+        except Exception:
+            pass
 
     def _handle_get_favorites(self, payload: dict) -> None:
         """Return the full favorites map for the settings list."""

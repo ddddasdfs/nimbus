@@ -86,17 +86,6 @@ class SkinSyncSequence:
                 dialog.pump_messages()
                 updater_log.exception("Skin download raised an exception", exc_info=True)
 
-        # Emote catalog sync - best-effort, never blocks or fails startup.
-        try:
-            from utils.core.emote_sync import is_emote_sync_enabled, sync_emotes
-            if is_emote_sync_enabled():
-                dialog.set_status("Checking emotes…")
-                dialog.pump_messages()
-                emote_ok = sync_emotes()
-                updater_log.info(f"Emote sync completed with success={emote_ok}")
-        except Exception as exc:  # noqa: BLE001
-            updater_log.debug(f"Emote sync skipped: {exc}")
-
         status_checker.update_status(force=True)
 
         if success:

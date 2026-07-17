@@ -317,12 +317,16 @@ class MessageHandler:
             log.warning(f"[EMOTE] set-emote-enabled failed: {e}")
 
     def _handle_sync_emotes(self, payload: dict) -> None:
-        """Re-sync the emote repo, then return the refreshed catalog."""
+        """Re-read the emote catalog from the local game files, then return it.
+
+        Emotes come from the game's own WADs, so there is nothing to download -
+        this just re-parses the hash list (e.g. after a game patch).
+        """
         try:
-            from utils.core.emote_sync import sync_emotes
-            sync_emotes()
+            from utils.core.emote_catalog import load_game_emotes
+            load_game_emotes(force=True)
         except Exception as e:
-            log.warning(f"[EMOTE] sync-emotes failed: {e}")
+            log.warning(f"[EMOTE] emote catalog reload failed: {e}")
         try:
             self._send_response(self._emotes_payload())
         except Exception:

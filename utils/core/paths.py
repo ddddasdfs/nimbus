@@ -251,6 +251,29 @@ def get_app_dir() -> Path:
         return Path(__file__).parent.parent.parent
 
 
+def get_tools_dir() -> Path:
+    """
+    Get the bundled injection tools directory (mod-tools.exe, hashes.game.txt, ...).
+
+    These ship with the app, so this resolves against the app/bundle location - not
+    the writable user data directory.
+    """
+    if getattr(sys, 'frozen', False):
+        if hasattr(sys, '_MEIPASS'):
+            # One-file mode: tools are extracted to _MEIPASS
+            return Path(sys._MEIPASS) / "injection" / "tools"
+        base_dir = Path(sys.executable).parent
+        for candidate in (
+            base_dir / "injection" / "tools",
+            base_dir / "_internal" / "injection" / "tools",
+        ):
+            if candidate.exists():
+                return candidate
+        return base_dir / "injection" / "tools"
+    # Running from source: <repo>/injection/tools
+    return get_app_dir() / "injection" / "tools"
+
+
 def get_assets_dir() -> Path:
     """
     Get the base assets directory.

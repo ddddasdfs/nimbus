@@ -96,6 +96,12 @@
   }
 
   function log(level, message) {
+    // Mirror to the app log (via the bridge) so diagnostics are visible without devtools.
+    if (bridge) {
+      try {
+        bridge.send({ type: "chroma-log", source: "FavoriteStar", level: level, message: message, timestamp: Date.now() });
+      } catch (e) { /* ignore */ }
+    }
     const consoleMethod =
       level === "error" ? console.error : level === "warn" ? console.warn : console.log;
     consoleMethod(`${LOG_PREFIX} ${message}`);

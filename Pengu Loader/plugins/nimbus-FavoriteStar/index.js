@@ -19,6 +19,7 @@
   let starElement = null;
   let rollGuardChamp = null;          // champion we've already tried to auto-roll for
   let rolling = false;                // an auto-roll sequence is in progress
+  let championLocked = false;         // Python's authoritative "your champion is locked" signal
   const champDataCache = new Map();   // championId -> Map(skinId -> name)
 
   const CSS_RULES = `
@@ -213,7 +214,7 @@
 
   // Create the star once and anchor it over the centered skin (mirrors the dice button).
   function createStar() {
-    if (!isInChampSelect) return;
+    if (!isInChampSelect || !championLocked) return; // only once a champion is locked
     if (starElement && document.body.contains(starElement)) return; // already present
 
     const central = findCentralItem();
@@ -247,11 +248,27 @@
     const wasInChampSelect = isInChampSelect;
     isInChampSelect = data.phase === "ChampSelect" || data.phase === "FINALIZATION";
     if (isInChampSelect && !wasInChampSelect) {
-      log("debug", "Entered ChampSelect - enabling favorite star");
+      log("debug", "Entered ChampSelect");
       requestFavorites();
-      setTimeout(createStar, 300);
     } else if (!isInChampSelect && wasInChampSelect) {
-      log("debug", "Left ChampSelect - removing favorite star");
+      log("debug", "Left ChampSelect - cleaning up");
+      removeStar();
+      removeBanner();
+      rollGuardChamp = null;
+      championLocked = false;
+    }
+  }
+
+  // Python's authoritative signal that YOUR champion is locked (loadout screen).
+  function handleChampionLocked(data) {
+    const wasLocked = championLocked;
+    championLocked = !!(data && data.locked === true);
+    if (championLocked && !wasLocked) {
+      log("debug", "Champion locked - enabling favorite star + banner");
+      requestFavorites();
+      setTimeout(() => { createStar(); updateBanner(); scheduleAutoRoll(); }, 300);
+    } else if (!championLocked && wasLocked) {
+      log("debug", "Champion unlocked - removing star + banner");
       removeStar();
       removeBanner();
       rollGuardChamp = null;
@@ -260,7 +277,7 @@
 
   // nimbus-SkinMonitor publishes the centered skin as the carousel scrolls.
   function handleSkinStateChange() {
-    if (!isInChampSelect) return;
+    if (!isInChampSelect || !championLocked) return;
     if (!starElement || !document.body.contains(starElement)) {
       createStar();
     } else {
@@ -324,18 +341,8 @@
     document.getElementById(BANNER_ID)?.remove();
   }
 
-  // The skin carousel only exists once you've locked your champion (loadout screen),
-  // so it's the signal that we're past the champion-pick grid.
-  function skinCarouselPresent() {
-    return (
-      !!document.querySelector(".skin-selection-carousel") ||
-      !!document.querySelector(".skin-selection-item")
-    );
-  }
-
   function updateBanner() {
-    if (!isInChampSelect) return removeBanner();
-    if (!skinCarouselPresent()) return removeBanner(); // only after the champion is locked
+    if (!isInChampSelect || !championLocked) return removeBanner(); // only after champion lock
     const { championId } = getContext();
     if (championId === null) return removeBanner();
     const pin = favoritesMap[String(championId)];
@@ -382,63 +389,49 @@
     return null;
   }
 
-  function tileByOffset(off) {
-    const items = document.querySelectorAll(".skin-selection-item");
-    for (const it of items) {
-      if (it.classList.contains("skin-carousel-offset-" + off)) return it;
-    }
-    return null;
-  }
-
-  // Step the carousel toward the pinned skin: click the target tile directly if it's in
-  // the DOM, else advance one tile at a time. Bounded, with diagnostics. Best-effort —
-  // for unowned skins the client may reset the selection to default afterwards.
+  // Best-effort: click the pinned skin's tile to center it. The reliable center id comes
+  // from nimbus-SkinMonitor (__nimbusSkinState.skinId); tile ids are read from images and
+  // logged so we can see whether the DOM exposes them at all. Bounded, no stepping.
   function autoRoll() {
-    if (rolling || !isInChampSelect) return;
-    const { championId } = getContext();
+    if (rolling || !isInChampSelect || !championLocked) return;
+    const { championId, skinId } = getContext();
     if (championId === null) return;
     const pin = favoritesMap[String(championId)];
     if (pin === undefined || pin === null || typeof pin === "string") return;
     const target = Number(pin);
+    if (Number(skinId) === target) { log("info", "auto-roll: pinned skin already centered"); return; }
 
     rolling = true;
-    let steps = 0;
-    const maxSteps = 30;
+    let attempts = 0;
+    const maxAttempts = 6;
 
-    const tick = () => {
-      if (!isInChampSelect) { rolling = false; return; }
-      const central = findCentralItem();
-      const centerId = central ? getTileSkinId(central) : null;
-      log("info", `auto-roll step ${steps}: center=${centerId} target=${target}`);
+    const tryOnce = () => {
+      if (!isInChampSelect || !championLocked) { rolling = false; return; }
+      const cur = getContext().skinId;
+      if (Number(cur) === target) { rolling = false; log("info", "auto-roll: centered on pinned skin"); return; }
+      if (attempts >= maxAttempts) { rolling = false; log("warn", "auto-roll: gave up"); return; }
 
-      if (centerId === target) { rolling = false; log("info", "auto-roll: centered on pinned skin"); return; }
-      if (steps >= maxSteps) { rolling = false; log("warn", "auto-roll: gave up (max steps)"); return; }
-
-      // Prefer clicking the target tile directly (works if it's in the DOM at all).
-      let clicked = false;
       const items = document.querySelectorAll(".skin-selection-item");
+      const readable = [];
+      let clicked = false;
       for (const it of items) {
-        if (getTileSkinId(it) === target) {
+        const sid = getTileSkinId(it);
+        if (sid !== null) readable.push(sid);
+        if (sid === target && !clicked) {
           try { it.click(); clicked = true; } catch (e) { /* ignore */ }
-          break;
         }
       }
-      // Otherwise advance one step by clicking the tile just right of center.
-      if (!clicked) {
-        const adv = tileByOffset(3) || tileByOffset(4);
-        if (adv) { try { adv.click(); clicked = true; } catch (e) { /* ignore */ } }
-      }
-      if (!clicked) { rolling = false; log("warn", "auto-roll: found no tile to click - stopping"); return; }
+      log("info", `auto-roll try ${attempts}: center=${cur} target=${target} tiles=${items.length} readableIds=[${readable.join(",")}] clicked=${clicked}`);
 
-      steps++;
-      setTimeout(tick, 220);
+      attempts++;
+      setTimeout(tryOnce, 500);
     };
-    tick();
+    tryOnce();
   }
 
   // One bounded attempt per champion, after injection has settled.
   function scheduleAutoRoll() {
-    if (!isInChampSelect) return;
+    if (!isInChampSelect || !championLocked) return;
     const { championId } = getContext();
     if (championId === null || rollGuardChamp === championId) return;
     const pin = favoritesMap[String(championId)];
@@ -457,6 +450,7 @@
 
     bridge.subscribe("favorites-data", handleFavoritesData);
     bridge.subscribe("phase-change", handlePhaseChange);
+    bridge.subscribe("champion-locked", handleChampionLocked);
     bridge.onReady(() => {
       requestFavorites();
     });

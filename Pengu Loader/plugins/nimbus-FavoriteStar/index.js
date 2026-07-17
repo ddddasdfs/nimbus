@@ -232,6 +232,7 @@
     container.appendChild(star);
     starElement = star;
     renderStarState();
+    updateBanner();
     log("info", "Favorite star created over centered skin");
   }
 
@@ -316,8 +317,18 @@
     document.getElementById(BANNER_ID)?.remove();
   }
 
+  // The skin carousel only exists once you've locked your champion (loadout screen),
+  // so it's the signal that we're past the champion-pick grid.
+  function skinCarouselPresent() {
+    return (
+      !!document.querySelector(".skin-selection-carousel") ||
+      !!document.querySelector(".skin-selection-item")
+    );
+  }
+
   function updateBanner() {
     if (!isInChampSelect) return removeBanner();
+    if (!skinCarouselPresent()) return removeBanner(); // only after the champion is locked
     const { championId } = getContext();
     if (championId === null) return removeBanner();
     const pin = favoritesMap[String(championId)];

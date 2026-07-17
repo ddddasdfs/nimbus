@@ -43,6 +43,7 @@ class RepoDownloader:
         target_dir: Path = None,
         repo_url: str = "https://github.com/Alban1911/LeagueSkins",
         progress_callback: Optional[ProgressCallback] = None,
+        version_filename: str = '.skin_version',
     ):
         self.repo_url = repo_url
         # Use user data directory for skins to avoid permission issues
@@ -53,10 +54,19 @@ class RepoDownloader:
         })
         self.progress_callback = progress_callback
 
-        # Version tracking
-        self.version_file = self.target_dir / '.skin_version'
-        self.api_base = "https://api.github.com/repos/Alban1911/LeagueSkins"
-        self.raw_base = "https://raw.githubusercontent.com/Alban1911/LeagueSkins/main"
+        # Version tracking. API/raw bases are derived from repo_url so this downloader
+        # can serve any GitHub repo (skins, emotes, ...) rather than a hardcoded one.
+        self.version_file = self.target_dir / version_filename
+        owner_repo = (
+            repo_url.strip()
+            .removeprefix("https://github.com/")
+            .removeprefix("http://github.com/")
+            .rstrip("/")
+            .removesuffix(".git")
+            .rstrip("/")
+        )
+        self.api_base = f"https://api.github.com/repos/{owner_repo}"
+        self.raw_base = f"https://raw.githubusercontent.com/{owner_repo}/main"
 
         # If changed files exceed this, use full ZIP instead of individual downloads
         self.incremental_file_threshold = 200

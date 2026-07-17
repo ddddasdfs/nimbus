@@ -1421,12 +1421,13 @@
       return;
     }
 
-    // Targets must be emotes you can actually equip, so drop the ones we know you
-    // don't own. owned === null means "couldn't tell" (no Riot id) - keep those.
+    // Targets must be emotes you can actually equip, so show only what you own.
+    // If ownership couldn't be read at all (client closed), fall back to everything
+    // rather than showing an empty list.
     let pool = emoteCatalog;
     if (which === "target") {
-      pool = emoteCatalog.filter((e) => e.owned !== false);
-      pool = pool.slice().sort((a, b) => (b.owned === true) - (a.owned === true));
+      const known = emoteCatalog.some((e) => e.owned === true);
+      pool = known ? emoteCatalog.filter((e) => e.owned === true) : emoteCatalog;
     }
 
     const matches = query
@@ -1458,11 +1459,7 @@
       meta.appendChild(nameEl);
       const sub = document.createElement("div");
       sub.className = "settings-emotes-replaces";
-      if (which === "target") {
-        sub.textContent = emote.owned === true ? "You own this" : "Ownership unknown";
-      } else {
-        sub.textContent = emote.category || "";
-      }
+      sub.textContent = emote.category || "";
       meta.appendChild(sub);
       row.appendChild(meta);
 

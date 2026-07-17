@@ -16,16 +16,17 @@ def _state(monkeypatch):
 
 
 def _emote(eid, name="X"):
+    """Selections are keyed by asset base path, so id == base_path here."""
     return GameEmote(
         id=eid, name=name, category="general",
-        base_path=f"assets/loadouts/summoneremotes/{eid}",
-        variants={"vfx": f"assets/loadouts/summoneremotes/{eid}_vfx.tex"},
+        base_path=eid,
+        variants={"vfx": f"{eid}_vfx.tex"},
     )
 
 
 def _catalog(monkeypatch, emotes):
-    by_id = {e.id: e for e in emotes}
-    monkeypatch.setattr(em, "get_game_emote", lambda i: by_id.get(i))
+    by_path = {e.base_path: e for e in emotes}
+    monkeypatch.setattr(em, "get_emote_by_base_path", lambda p: by_path.get(p))
 
 
 def test_state_defaults_and_roundtrip(monkeypatch):
@@ -115,10 +116,10 @@ def test_fantome_built_when_ready(monkeypatch, tmp_path):
 def test_resolution_never_raises(monkeypatch):
     _state(monkeypatch)
 
-    def boom(_i):
+    def boom(_p):
         raise RuntimeError("catalog exploded")
 
-    monkeypatch.setattr(em, "get_game_emote", boom)
+    monkeypatch.setattr(em, "get_emote_by_base_path", boom)
     em.set_emote_enabled(True)
     em.set_source_emote("a")
     em.set_target_emote("b")

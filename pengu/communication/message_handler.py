@@ -291,26 +291,62 @@ class MessageHandler:
             log.debug(f"[EMOTE] Could not read owned emotes: {e}")
             return None
 
-    def _emotes_payload(self) -> str:
-        """Emote catalog (from the game's own files) + the current source/target choice.
+    def _riot_emote_index(self):
+        """Riot's own emote index: id -> {name, inventoryIcon}.
 
-        Each entry carries `owned`: True/False, or None when the emote has no Riot
-        number in the game files and ownership therefore can't be determined.
+        This is authoritative for ids and display names; the game files alone can't
+        be trusted for either (many emote assets carry no id in their filename).
+        """
+        try:
+            lcu = getattr(self.skin_scraper, "lcu", None)
+            if lcu is None:
+                return []
+            data = lcu.get("/lol-game-data/assets/v1/summoner-emotes.json")
+            return data if isinstance(data, list) else []
+        except Exception as e:  # noqa: BLE001
+            log.debug(f"[EMOTE] Could not read Riot emote index: {e}")
+            return []
+
+    def _emotes_payload(self) -> str:
+        """Emote list + the current source/target choice.
+
+        Built by joining Riot's emote index (ids, real names) to the harvested game
+        assets via the icon path. Entries are keyed by asset base path so injection
+        never needs the client. `owned` is exact when the inventory is readable.
         """
         from utils.core.emote_assets import is_harvested
-        from utils.core.emote_catalog import load_game_emotes
+        from utils.core.emote_catalog import (
+            base_path_from_icon, get_emote_by_base_path, load_game_emotes,
+        )
         from utils.core.emotes import get_source_emote, get_target_emote, is_emote_enabled
 
+        load_game_emotes()
         owned_nums = self._owned_emote_nums()
+        seen = set()
         emotes = []
-        for e in load_game_emotes():
-            if owned_nums is None or e.emote_num is None:
-                owned = None  # unknown, not "unowned"
-            else:
-                owned = e.emote_num in owned_nums
+        for entry in self._riot_emote_index():
+            if not isinstance(entry, dict):
+                continue
+            emote_id = entry.get("id")
+            name = (entry.get("name") or "").strip()
+            base_path = base_path_from_icon(entry.get("inventoryIcon") or "")
+            if emote_id is None or not name or not base_path or base_path in seen:
+                continue
+            game_emote = get_emote_by_base_path(base_path)
+            if game_emote is None or not game_emote.vfx_path:
+                continue  # no in-game asset -> can't be swapped
+            seen.add(base_path)
+            try:
+                owned = (int(emote_id) in owned_nums) if owned_nums is not None else None
+            except (TypeError, ValueError):
+                owned = None
             emotes.append({
-                "id": e.id, "name": e.name, "category": e.category, "owned": owned,
+                "id": base_path,               # injection-ready key
+                "name": name,                  # Riot's display name
+                "category": game_emote.category,
+                "owned": owned,
             })
+        emotes.sort(key=lambda e: e["name"].lower())
         return json.dumps({
             "type": "emotes-data",
             "emotes": emotes,
@@ -334,12 +370,12 @@ class MessageHandler:
     def _set_emote_choice(self, payload: dict, which: str) -> None:
         """Shared handler for source/target selection. Unknown ids clear the choice."""
         try:
-            from utils.core.emote_catalog import get_game_emote
+            from utils.core.emote_catalog import get_emote_by_base_path
             from utils.core.emotes import set_source_emote, set_target_emote
 
-            emote_id = payload.get("id")
-            if emote_id is not None and get_game_emote(str(emote_id)) is None:
-                log.warning(f"[EMOTE] Ignoring unknown emote id: {emote_id}")
+            emote_id = payload.get("id")  # asset base path
+            if emote_id is not None and get_emote_by_base_path(str(emote_id)) is None:
+                log.warning(f"[EMOTE] Ignoring unknown emote: {emote_id}")
                 emote_id = None
             value = str(emote_id) if emote_id else None
             (set_source_emote if which == "source" else set_target_emote)(value)
@@ -375,9 +411,14 @@ class MessageHandler:
         `emote-harvest` messages and a fresh `emotes-data` is sent when finished.
         """
         import threading
+        import time
 
         def _run() -> None:
+            state = {"percent": 0, "message": "Starting…", "running": True}
+
             def _progress(percent: int, message: str) -> None:
+                state["percent"] = percent
+                state["message"] = message
                 try:
                     self._send_response(json.dumps({
                         "type": "emote-harvest", "percent": percent,
@@ -386,12 +427,34 @@ class MessageHandler:
                 except Exception:
                     pass
 
+            def _heartbeat() -> None:
+                # wad-extract unpacks ~2.8GB in one opaque call (~1-2 min). Without
+                # this the UI sits on a frozen "5%" and looks hung.
+                started = time.time()
+                while state["running"]:
+                    time.sleep(2)
+                    if not state["running"]:
+                        break
+                    elapsed = int(time.time() - started)
+                    try:
+                        self._send_response(json.dumps({
+                            "type": "emote-harvest", "percent": state["percent"],
+                            "message": f"{state['message']} ({elapsed}s elapsed)",
+                            "done": False,
+                        }))
+                    except Exception:
+                        pass
+
+            threading.Thread(target=_heartbeat, daemon=True, name="EmoteHarvestBeat").start()
+
             ok = False
             try:
                 from utils.core.emote_assets import harvest
                 ok = harvest(_progress)
             except Exception as e:  # noqa: BLE001
                 log.warning(f"[EMOTE] harvest failed: {e}")
+            finally:
+                state["running"] = False
             try:
                 self._send_response(json.dumps({
                     "type": "emote-harvest", "percent": 100 if ok else 0,

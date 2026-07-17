@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from config import get_config_option, set_config_option
-from utils.core.emote_catalog import GameEmote, get_game_emote
+from utils.core.emote_catalog import GameEmote, get_emote_by_base_path
 from utils.core.logging import get_logger
 
 log = get_logger()
@@ -63,7 +63,9 @@ def resolve_emote_pair() -> Optional[Tuple[GameEmote, GameEmote]]:
         source_id, target_id = get_source_emote(), get_target_emote()
         if not source_id or not target_id or source_id == target_id:
             return None
-        source, target = get_game_emote(source_id), get_game_emote(target_id)
+        # Selections are stored as asset base paths, so resolution never needs the client.
+        source = get_emote_by_base_path(source_id)
+        target = get_emote_by_base_path(target_id)
         if source is None or target is None:
             return None
         return source, target

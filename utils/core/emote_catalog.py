@@ -145,3 +145,41 @@ def get_game_emote(emote_id: str) -> Optional[GameEmote]:
         if e.id == emote_id:
             return e
     return None
+
+
+def base_path_from_icon(icon: str) -> Optional[str]:
+    """Map Riot's inventoryIcon to the asset base path used by this catalog.
+
+    Riot's summoner-emotes.json is the authoritative id/name index, and its icon
+    path points at the same assets we harvest, e.g.
+
+      /lol-game-data/assets/ASSETS/Loadouts/SummonerEmotes/Flairs/Thumb_Happy_Up_Inventory.png
+        -> assets/loadouts/summoneremotes/flairs/thumb_happy_up
+
+    Joining on this is exact, unlike guessing ids out of filenames.
+    """
+    if not icon or not isinstance(icon, str):
+        return None
+    lowered = icon.strip().lower()
+    marker = "/lol-game-data/assets/"
+    if lowered.startswith(marker):
+        lowered = lowered[len(marker):]
+    lowered = lowered.lstrip("/")
+    if not lowered.startswith(_PREFIX):
+        return None
+    lowered = lowered.split("?", 1)[0]
+    stem = lowered.rsplit("/", 1)[-1].split(".", 1)[0]
+    m = _VARIANT_RE.match(stem)
+    if m:
+        stem = m.group("base")
+    folder = lowered.rsplit("/", 1)[0]
+    return f"{folder}/{stem}"
+
+
+def get_emote_by_base_path(base_path: str) -> Optional[GameEmote]:
+    if not base_path:
+        return None
+    for e in load_game_emotes():
+        if e.base_path == base_path:
+            return e
+    return None

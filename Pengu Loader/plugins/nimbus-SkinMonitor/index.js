@@ -1,8 +1,8 @@
 /**
- * @name 2SDAY-SkinMonitor
- * @author 2SDAY Team
+ * @name nimbus-SkinMonitor
+ * @author nimbus Team
  * @description Skin monitor for Pengu Loader
- * @link https://github.com/ddddasdfs/2SDAY
+ * @link https://github.com/ddddasdfs/Nimbus
  */
 
 console.log("[SkinMonitor] Plugin loaded");
@@ -18,7 +18,7 @@ const RETRY_BASE_MS = 1000;
 const RETRY_MAX_MS = 30000;
 let BRIDGE_PORT = 50000; // Default, will be updated from /bridge-port endpoint
 let BRIDGE_URL = `ws://127.0.0.1:${BRIDGE_PORT}`;
-const BRIDGE_PORT_STORAGE_KEY = "2sday_bridge_port";
+const BRIDGE_PORT_STORAGE_KEY = "nimbus_bridge_port";
 const DISCOVERY_START_PORT = 50000;
 const DISCOVERY_END_PORT = 50010;
 
@@ -261,9 +261,9 @@ function publishSkinState(payload) {
     hasChromas: Boolean(payload?.hasChromas),
     updatedAt: Date.now(),
   };
-  window.__twosdaySkinState = detail;
+  window.__nimbusSkinState = detail;
   try {
-    window.__twosdayCurrentSkin = detail.name;
+    window.__nimbusCurrentSkin = detail.name;
     // Update lastLoggedSkin to match ensuring consistency if payload brought a new name
     if (name) lastLoggedSkin = name;
   } catch {
@@ -293,10 +293,10 @@ function sendBridgePayload(obj) {
   }
 }
 
-// window.__twosdayBridge is exposed in start() after port discovery completes,
+// window.__nimbusBridge is exposed in start() after port discovery completes,
 // so that consumer plugins' waitForBridge() won't resolve until the port is known.
 if (typeof window !== "undefined") {
-  window.__twosdayBridgeEmit = sendBridgePayload; // backward compat (available early)
+  window.__nimbusBridgeEmit = sendBridgePayload; // backward compat (available early)
 }
 
 function sendToBridge(payload) {
@@ -359,7 +359,7 @@ function setupBridgeSocket() {
     resyncSkinAfterConnect();
     bridgeErrorLogged = false;
     bridgeSetupWarned = false;
-    window.__twosdayBridgeEmit = sendBridgePayload;
+    window.__nimbusBridgeEmit = sendBridgePayload;
     _notifyReady();
   });
 
@@ -382,42 +382,42 @@ function setupBridgeSocket() {
 
     if (data && data.type === "skin-mods-response") {
       window.dispatchEvent(
-        new CustomEvent("twosday-custom-wheel-skin-mods", { detail: data })
+        new CustomEvent("nimbus-custom-wheel-skin-mods", { detail: data })
       );
       return;
     }
 
     if (data && data.type === "maps-response") {
       window.dispatchEvent(
-        new CustomEvent("twosday-custom-wheel-maps", { detail: data })
+        new CustomEvent("nimbus-custom-wheel-maps", { detail: data })
       );
       return;
     }
 
     if (data && data.type === "fonts-response") {
       window.dispatchEvent(
-        new CustomEvent("twosday-custom-wheel-fonts", { detail: data })
+        new CustomEvent("nimbus-custom-wheel-fonts", { detail: data })
       );
       return;
     }
 
     if (data && data.type === "announcers-response") {
       window.dispatchEvent(
-        new CustomEvent("twosday-custom-wheel-announcers", { detail: data })
+        new CustomEvent("nimbus-custom-wheel-announcers", { detail: data })
       );
       return;
     }
 
     if (data && data.type === "category-mods-response") {
       window.dispatchEvent(
-        new CustomEvent("twosday-custom-wheel-category-mods", { detail: data })
+        new CustomEvent("nimbus-custom-wheel-category-mods", { detail: data })
       );
       return;
     }
 
     if (data && data.type === "others-response") {
       window.dispatchEvent(
-        new CustomEvent("twosday-custom-wheel-others", { detail: data })
+        new CustomEvent("nimbus-custom-wheel-others", { detail: data })
       );
       return;
     }
@@ -425,7 +425,7 @@ function setupBridgeSocket() {
     // Reset skin state when entering Lobby phase (so same skin in next game triggers detection)
     if (data && data.type === "champion-locked") {
       window.dispatchEvent(
-        new CustomEvent("twosday-custom-wheel-champion-locked", { detail: data })
+        new CustomEvent("nimbus-custom-wheel-champion-locked", { detail: data })
       );
       return;
     }
@@ -433,7 +433,7 @@ function setupBridgeSocket() {
     if (data && data.type === "phase-change" && data.phase === "Lobby") {
       lastLoggedSkin = null;
       console.log(`${LOG_PREFIX} Reset skin state for new game (Lobby phase)`);
-      window.dispatchEvent(new CustomEvent("twosday-custom-wheel-reset"));
+      window.dispatchEvent(new CustomEvent("nimbus-custom-wheel-reset"));
       return;
     }
 
@@ -648,7 +648,7 @@ async function start() {
   // Expose the shared bridge API now that the port is known.
   // Consumer plugins poll for this object via waitForBridge().
   if (typeof window !== "undefined") {
-    window.__twosdayBridge = Object.freeze({
+    window.__nimbusBridge = Object.freeze({
       send: sendBridgePayload,
       subscribe,
       unsubscribe,

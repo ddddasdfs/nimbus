@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Security helpers for 2SDAY's localhost bridge.
+Security helpers for nimbus's localhost bridge.
 """
 
 from urllib.parse import urlparse

@@ -18,7 +18,7 @@ from utils.core.logging import get_logger
 log = get_logger()
 
 # Token prefix for identification
-TOKEN_PREFIX = "2SDAY:"
+TOKEN_PREFIX = "nimbus:"
 # Token version (v2 = WebSocket relay, no IP/port needed)
 TOKEN_VERSION = 2
 # Token expiration time (1 hour)
@@ -50,7 +50,7 @@ class PartyToken:
         Total: 45 bytes before compression
 
         Returns:
-            String like "2SDAY:abc123..." suitable for sharing
+            String like "nimbus:abc123..." suitable for sharing
         """
         try:
             data = struct.pack(
@@ -78,7 +78,7 @@ class PartyToken:
         Supports both v1 (legacy P2P with IP/port) and v2 (relay-only) tokens.
 
         Args:
-            token_str: Token string (with or without 2SDAY: prefix)
+            token_str: Token string (with or without nimbus: prefix)
 
         Returns:
             PartyToken instance

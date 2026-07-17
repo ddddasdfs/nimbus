@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Main entry point for 2SDAY
+Main entry point for nimbus
 """
 
 import argparse
@@ -13,7 +13,7 @@ from pathlib import Path
 MIN_PYTHON = (3, 11)
 if sys.version_info < MIN_PYTHON:
     raise RuntimeError(
-        f"2SDAY requires Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]} or newer. "
+        f"nimbus requires Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]} or newer. "
         "Please upgrade your interpreter and rebuild the application."
     )
 
@@ -73,7 +73,7 @@ def _show_dll_invalid_dialog(tools_dir) -> bool:
         "Please replace it with the correct file.\n\n"
         "This file is NOT available on our Discord. Do not ask for it there.\n"
         "Asking for or sharing this file will result in a permanent ban.",
-        "2SDAY - Invalid DLL",
+        "nimbus - Invalid DLL",
         0x40010  # MB_OK | MB_ICONERROR | MB_SETFOREGROUND
     )
     try:
@@ -199,10 +199,10 @@ def _check_dll_present() -> bool:
     buttons[1].pszButtonText = "Cancel"
 
     content_text = (
-        "Due to DMCA restrictions, 2SDAY cannot distribute the cslol-dll.dll file.\n\n"
+        "Due to DMCA restrictions, nimbus cannot distribute the cslol-dll.dll file.\n\n"
         "You must provide your own signed cslol-dll.dll file.\n\n"
         "See the project README for how to obtain and sign this file yourself.\n\n"
-        "<a href=\"https://github.com/ddddasdfs/2SDAY\">https://github.com/ddddasdfs/2SDAY</a>"
+        "<a href=\"https://github.com/ddddasdfs/Nimbus\">https://github.com/ddddasdfs/Nimbus</a>"
     )
 
     # Configure dialog
@@ -212,7 +212,7 @@ def _check_dll_present() -> bool:
     config.hInstance = None
     config.dwFlags = TDF_ENABLE_HYPERLINKS | TDF_ALLOW_DIALOG_CANCELLATION
     config.dwCommonButtons = 0
-    config.pszWindowTitle = "2SDAY - DLL Required"
+    config.pszWindowTitle = "nimbus - DLL Required"
     config.pszMainIcon = ctypes.cast(TD_WARNING_ICON, wintypes.LPCWSTR)
     config.pszMainInstruction = "DLL file required"
     config.pszContent = content_text
@@ -237,12 +237,12 @@ def _check_dll_present() -> bool:
         # Fallback to simple MessageBox
         result = ctypes.windll.user32.MessageBoxW(
             0,
-            "Due to DMCA restrictions, 2SDAY cannot distribute the cslol-dll.dll file.\n\n"
+            "Due to DMCA restrictions, nimbus cannot distribute the cslol-dll.dll file.\n\n"
             "You must provide your own signed cslol-dll.dll file.\n\n"
             "This file is NOT available on our Discord. Do not ask for it there.\n"
             "Asking for or sharing this file will result in a permanent ban.\n\n"
             "Click OK to open the folder where you should place the DLL.",
-            "2SDAY - DLL Required",
+            "nimbus - DLL Required",
             0x40031  # MB_OKCANCEL | MB_ICONWARNING | MB_SETFOREGROUND
         )
         if result == 1:  # IDOK
@@ -364,7 +364,7 @@ def _update_registry_version() -> None:
         return
     try:
         import winreg
-        key_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\2SDAY"
+        key_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\nimbus"
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_SET_VALUE) as key:
             winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, APP_VERSION)
     except Exception:
@@ -373,7 +373,7 @@ def _update_registry_version() -> None:
 
 def run_league_unlock(args: Optional[argparse.Namespace] = None,
                       injection_threshold: Optional[float] = None) -> None:
-    """Run the core 2SDAY application startup and main loop."""
+    """Run the core nimbus application startup and main loop."""
     # Check for single instance before doing anything else
     check_single_instance()
 
@@ -492,7 +492,7 @@ def run_league_unlock(args: Optional[argparse.Namespace] = None,
 
 
 def main() -> None:
-    """Program entry point that prepares and launches 2SDAY."""
+    """Program entry point that prepares and launches nimbus."""
     # Check for required DLL before anything else
     if not _check_dll_present():
         sys.exit(1)
@@ -526,16 +526,16 @@ if __name__ == "__main__":
             report_issue(
                 "FATAL_CRASH",
                 "error",
-                "2SDAY crashed unexpectedly.",
+                "nimbus crashed unexpectedly.",
                 details={"type": type(e).__name__, "error": str(e)},
-                hint="Check %LOCALAPPDATA%\\2SDAY\\logs\\ for details.",
+                hint="Check %LOCALAPPDATA%\\nimbus\\logs\\ for details.",
             )
         except Exception:
             pass
         
         error_msg = f"""
 ================================================================================
-FATAL ERROR - 2SDAY Crashed
+FATAL ERROR - nimbus Crashed
 ================================================================================
 Error: {e}
 Type: {type(e).__name__}
@@ -545,7 +545,7 @@ Traceback:
 ================================================================================
 
 This error has been logged. Please report this issue with the log file.
-Log location: Check %LOCALAPPDATA%\\2SDAY\\logs\\
+Log location: Check %LOCALAPPDATA%\\nimbus\\logs\\
 ================================================================================
 """
         
@@ -563,8 +563,8 @@ Log location: Check %LOCALAPPDATA%\\2SDAY\\logs\\
             try:
                 ctypes.windll.user32.MessageBoxW(
                     0,
-                    f"2SDAY crashed with an unhandled error:\n\n{str(e)}\n\nError type: {type(e).__name__}\n\nPlease check the log file in:\n%LOCALAPPDATA%\\2SDAY\\logs\\",
-                    "2SDAY - Fatal Error",
+                    f"nimbus crashed with an unhandled error:\n\n{str(e)}\n\nError type: {type(e).__name__}\n\nPlease check the log file in:\n%LOCALAPPDATA%\\nimbus\\logs\\",
+                    "nimbus - Fatal Error",
                     0x50010  # MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST
                 )
             except Exception:

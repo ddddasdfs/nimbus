@@ -1,15 +1,15 @@
 /**
- * @name 2SDAY-SettingsPanel
- * @author 2SDAY Team
- * @description Settings panel for 2SDAY
- * @link https://github.com/ddddasdfs/2SDAY
+ * @name nimbus-SettingsPanel
+ * @author nimbus Team
+ * @description Settings panel for nimbus
+ * @link https://github.com/ddddasdfs/Nimbus
  */
 (function initSettingsPanel() {
-  const LOG_PREFIX = "[2SDAY-SettingsPanel]";
-  const GITHUB_URL = "https://github.com/ddddasdfs/2SDAY";
+  const LOG_PREFIX = "[nimbus-SettingsPanel]";
+  const GITHUB_URL = "https://github.com/ddddasdfs/Nimbus";
 
-  const PANEL_ID = "twosday-settings-panel";
-  const FLYOUT_ID = "twosday-settings-flyout";
+  const PANEL_ID = "nimbus-settings-panel";
+  const FLYOUT_ID = "nimbus-settings-flyout";
 
   /**
    * Escape HTML special characters to prevent XSS (CWE-79)
@@ -34,7 +34,7 @@
       const interval = 50;
       let elapsed = 0;
       const check = () => {
-        if (window.__twosdayBridge) return resolve(window.__twosdayBridge);
+        if (window.__nimbusBridge) return resolve(window.__nimbusBridge);
         elapsed += interval;
         if (elapsed >= timeout) return reject(new Error("Bridge not available"));
         setTimeout(check, interval);
@@ -56,20 +56,20 @@
 
   function getCSSRules() {
     return `
-    @keyframes twosdayWarningPulse {
+    @keyframes nimbusWarningPulse {
       0%   { filter: drop-shadow(0 0 0 rgba(255, 70, 70, 0.00)) drop-shadow(0 0 0 rgba(255, 70, 70, 0.00)); opacity: 0.95; }
       50%  { filter: drop-shadow(0 0 6px rgba(255, 70, 70, 0.90)) drop-shadow(0 0 12px rgba(255, 70, 70, 0.45)); opacity: 1.00; }
       100% { filter: drop-shadow(0 0 0 rgba(255, 70, 70, 0.00)) drop-shadow(0 0 0 rgba(255, 70, 70, 0.00)); opacity: 0.95; }
     }
 
-    .twosday-warning-glow {
-      animation: twosdayWarningPulse 1.35s ease-in-out infinite;
+    .nimbus-warning-glow {
+      animation: nimbusWarningPulse 1.35s ease-in-out infinite;
       will-change: filter, opacity;
     }
 
     @font-face {
       font-family: "Beaufort for LOL";
-      src: url("http://127.0.0.1:${window.__twosdayBridge ? window.__twosdayBridge.port : 50000}/asset/BeaufortforLOL-Regular.ttf") format("truetype");
+      src: url("http://127.0.0.1:${window.__nimbusBridge ? window.__nimbusBridge.port : 50000}/asset/BeaufortforLOL-Regular.ttf") format("truetype");
       font-weight: normal;
       font-style: normal;
       font-display: swap;
@@ -77,44 +77,44 @@
     
     @font-face {
       font-family: "Beaufort for LOL";
-      src: url("http://127.0.0.1:${window.__twosdayBridge ? window.__twosdayBridge.port : 50000}/asset/BeaufortforLOL-Bold.ttf") format("truetype");
+      src: url("http://127.0.0.1:${window.__nimbusBridge ? window.__nimbusBridge.port : 50000}/asset/BeaufortforLOL-Bold.ttf") format("truetype");
       font-weight: bold;
       font-style: normal;
       font-display: swap;
     }
 
     /* Diagnostics / Troubleshooting dialog scrollbar (avoid native Windows scrollbar look) */
-    #twosday-diagnostics-body {
+    #nimbus-diagnostics-body {
       scrollbar-width: thin;
       scrollbar-color: #463714 rgba(0, 0, 0, 0.25);
     }
 
-    #twosday-diagnostics-body::-webkit-scrollbar {
+    #nimbus-diagnostics-body::-webkit-scrollbar {
       width: 10px;
     }
 
-    #twosday-diagnostics-body::-webkit-scrollbar:horizontal {
+    #nimbus-diagnostics-body::-webkit-scrollbar:horizontal {
       display: none !important;
       height: 0 !important;
     }
 
-    #twosday-diagnostics-body::-webkit-scrollbar-track {
+    #nimbus-diagnostics-body::-webkit-scrollbar-track {
       background: rgba(0, 0, 0, 0.25);
       border-left: 1px solid rgba(70, 55, 20, 0.55);
     }
 
-    #twosday-diagnostics-body::-webkit-scrollbar-thumb {
+    #nimbus-diagnostics-body::-webkit-scrollbar-thumb {
       background: linear-gradient(to bottom, rgba(200, 155, 60, 0.22), rgba(70, 55, 20, 0.85));
       border: 1px solid rgba(70, 55, 20, 0.95);
       border-radius: 10px;
       min-height: 28px;
     }
 
-    #twosday-diagnostics-body::-webkit-scrollbar-thumb:hover {
+    #nimbus-diagnostics-body::-webkit-scrollbar-thumb:hover {
       background: linear-gradient(to bottom, rgba(200, 155, 60, 0.32), rgba(70, 55, 20, 0.95));
     }
 
-    #twosday-diagnostics-body::-webkit-scrollbar-corner {
+    #nimbus-diagnostics-body::-webkit-scrollbar-corner {
       background: transparent;
     }
     
@@ -209,7 +209,7 @@
       min-width: 50px;
     }
 
-    #${FLYOUT_ID} .twosday-tooltip-wrapper {
+    #${FLYOUT_ID} .nimbus-tooltip-wrapper {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -218,10 +218,10 @@
       top: 3px;
     }
 
-    #${FLYOUT_ID} .twosday-tooltip-icon {
+    #${FLYOUT_ID} .nimbus-tooltip-icon {
       width: 14px;
       height: 14px;
-      background-image: url("http://127.0.0.1:${window.__twosdayBridge ? window.__twosdayBridge.port : 50000}/asset/tooltip.png");
+      background-image: url("http://127.0.0.1:${window.__nimbusBridge ? window.__nimbusBridge.port : 50000}/asset/tooltip.png");
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
@@ -234,18 +234,18 @@
       background-color: transparent;
     }
 
-    #${FLYOUT_ID} .twosday-tooltip-icon:hover {
+    #${FLYOUT_ID} .nimbus-tooltip-icon:hover {
       opacity: 1;
     }
 
-    #${FLYOUT_ID} .twosday-tooltip-icon:focus-visible {
+    #${FLYOUT_ID} .nimbus-tooltip-icon:focus-visible {
       outline: 1px solid #c8aa6e;
       outline-offset: 2px;
       border-radius: 3px;
     }
 
     /* Tooltip bubble is rendered globally (outside flyout) */
-    #twosday-global-tooltip {
+    #nimbus-global-tooltip {
       position: fixed;
       left: 0;
       top: 0;
@@ -271,16 +271,16 @@
       font-family: "Beaufort for LOL", serif;
     }
 
-    #twosday-global-tooltip[data-show="true"] {
+    #nimbus-global-tooltip[data-show="true"] {
       opacity: 1;
       visibility: visible;
       transform: translateY(0px);
     }
 
-    #twosday-global-tooltip::after {
+    #nimbus-global-tooltip::after {
       content: "";
       position: absolute;
-      left: var(--twosday-tooltip-arrow-x, 50%);
+      left: var(--nimbus-tooltip-arrow-x, 50%);
       transform: translateX(-50%);
       width: 0;
       height: 0;
@@ -288,10 +288,10 @@
       border-right: 7px solid transparent;
     }
 
-    #twosday-global-tooltip::before {
+    #nimbus-global-tooltip::before {
       content: "";
       position: absolute;
-      left: var(--twosday-tooltip-arrow-x, 50%);
+      left: var(--nimbus-tooltip-arrow-x, 50%);
       transform: translateX(-50%);
       width: 0;
       height: 0;
@@ -301,24 +301,24 @@
     }
 
     /* Tooltip ABOVE the icon (arrow on bottom) */
-    #twosday-global-tooltip[data-placement="top"]::after {
+    #nimbus-global-tooltip[data-placement="top"]::after {
       top: 100%;
       border-top: 7px solid #0b1a2a;
     }
 
-    #twosday-global-tooltip[data-placement="top"]::before {
+    #nimbus-global-tooltip[data-placement="top"]::before {
       top: 100%;
       border-top: 8px solid #5c5b56;
       margin-top: 1px;
     }
 
     /* Tooltip BELOW the icon (arrow on top) */
-    #twosday-global-tooltip[data-placement="bottom"]::after {
+    #nimbus-global-tooltip[data-placement="bottom"]::after {
       top: -7px;
       border-bottom: 7px solid #0b1a2a;
     }
 
-    #twosday-global-tooltip[data-placement="bottom"]::before {
+    #nimbus-global-tooltip[data-placement="bottom"]::before {
       top: -8px;
       border-bottom: 8px solid #5c5b56;
       margin-top: -1px;
@@ -955,7 +955,7 @@
       version: payload.version || "",
     };
     // Update version badge if the panel is already open
-    const badge = document.getElementById("twosday-version-badge");
+    const badge = document.getElementById("nimbus-version-badge");
     if (badge && payload.version) {
       badge.textContent = `v${payload.version}`;
     }
@@ -1148,7 +1148,7 @@
     if (_badgeObserverStarted) return;
     _badgeObserverStarted = true;
 
-    // Re-apply badges when the Golden 2SDAY nav item is injected by 2SDAY-UI (or recreated by Ember).
+    // Re-apply badges when the Golden nimbus nav item is injected by nimbus-UI (or recreated by Ember).
     const tryApply = () => {
       try {
         applyErrorBadges();
@@ -1182,9 +1182,9 @@
   }
 
   function applyErrorBadges() {
-    // Sidebar "Golden 2SDAY" nav icon badge
+    // Sidebar "Golden nimbus" nav icon badge
     const navItem = document.querySelector(
-      "lol-uikit-navigation-item.menu_item_Golden.2SDAY"
+      "lol-uikit-navigation-item.menu_item_Golden.nimbus"
     );
     if (navItem) {
       const host =
@@ -1193,20 +1193,20 @@
         navItem;
 
       host.style.position = host.style.position || "relative";
-      // Use warning image overlay (assets/red-warning.png) on the top-right of the 2SDAY icon.
-      let badge = host.querySelector("#twosday-errors-badge");
+      // Use warning image overlay (assets/red-warning.png) on the top-right of the nimbus icon.
+      let badge = host.querySelector("#nimbus-errors-badge");
       if (errorBadgeState.hasErrors) {
         if (!badge) {
           badge = document.createElement("div");
-          badge.id = "twosday-errors-badge";
-          badge.classList.add("twosday-warning-glow");
+          badge.id = "nimbus-errors-badge";
+          badge.classList.add("nimbus-warning-glow");
           // Position + size for the warning overlay
           badge.style.position = "absolute";
           badge.style.top = "-10px";
           badge.style.right = "-10px";
           badge.style.width = "14px";
           badge.style.height = "14px";
-          badge.style.backgroundImage = `url(http://127.0.0.1:${window.__twosdayBridge ? window.__twosdayBridge.port : 50000}/asset/red-warning.png)`;
+          badge.style.backgroundImage = `url(http://127.0.0.1:${window.__nimbusBridge ? window.__nimbusBridge.port : 50000}/asset/red-warning.png)`;
           badge.style.backgroundSize = "contain";
           badge.style.backgroundRepeat = "no-repeat";
           badge.style.backgroundPosition = "center";
@@ -1223,19 +1223,19 @@
     const tb = document.getElementById("troubleshoot-button");
     if (tb) {
       tb.style.position = tb.style.position || "relative";
-      let warn = tb.querySelector("#twosday-troubleshoot-warning");
+      let warn = tb.querySelector("#nimbus-troubleshoot-warning");
       if (errorBadgeState.hasErrors) {
         if (!warn) {
           warn = document.createElement("div");
-          warn.id = "twosday-troubleshoot-warning";
-          warn.classList.add("twosday-warning-glow");
+          warn.id = "nimbus-troubleshoot-warning";
+          warn.classList.add("nimbus-warning-glow");
 
           warn.style.position = "absolute";
           warn.style.top = "-15px";
           warn.style.right = "-9px";
           warn.style.width = "14px";
           warn.style.height = "14px";
-          warn.style.backgroundImage = `url(http://127.0.0.1:${window.__twosdayBridge ? window.__twosdayBridge.port : 50000}/asset/red-warning.png)`;
+          warn.style.backgroundImage = `url(http://127.0.0.1:${window.__nimbusBridge ? window.__nimbusBridge.port : 50000}/asset/red-warning.png)`;
           warn.style.backgroundSize = "contain";
           warn.style.backgroundRepeat = "no-repeat";
           warn.style.backgroundPosition = "center";
@@ -1437,11 +1437,11 @@
     form.style.alignItems = "center";
 
     function getOrCreateGlobalTooltip() {
-      let el = document.getElementById("twosday-global-tooltip");
+      let el = document.getElementById("nimbus-global-tooltip");
       if (el) return el;
 
       el = document.createElement("div");
-      el.id = "twosday-global-tooltip";
+      el.id = "nimbus-global-tooltip";
       el.setAttribute("role", "tooltip");
       el.setAttribute("data-show", "false");
       document.body.appendChild(el);
@@ -1449,7 +1449,7 @@
     }
 
     function hideGlobalTooltip() {
-      const el = document.getElementById("twosday-global-tooltip");
+      const el = document.getElementById("nimbus-global-tooltip");
       if (!el) return;
       el.setAttribute("data-show", "false");
     }
@@ -1482,16 +1482,16 @@
       // Nudge the arrow towards the anchor if clamped
       const anchorCenterX = rect.left + rect.width / 2;
       const arrowX = Math.max(12, Math.min(tRect.width - 12, anchorCenterX - left));
-      tooltip.style.setProperty("--twosday-tooltip-arrow-x", `${Math.round(arrowX)}px`);
+      tooltip.style.setProperty("--nimbus-tooltip-arrow-x", `${Math.round(arrowX)}px`);
     }
 
     function createTooltipButton(tooltipText, ariaLabel) {
       const wrapper = document.createElement("span");
-      wrapper.className = "twosday-tooltip-wrapper";
+      wrapper.className = "nimbus-tooltip-wrapper";
 
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "twosday-tooltip-icon";
+      btn.className = "nimbus-tooltip-icon";
       btn.setAttribute("aria-label", ariaLabel || "Info");
 
       // prevent accidental focus/drag interactions with nearby controls
@@ -1510,7 +1510,7 @@
 
       // Keep tooltip in correct position while resizing/scrolling
       const reposition = () => {
-        const tt = document.getElementById("twosday-global-tooltip");
+        const tt = document.getElementById("nimbus-global-tooltip");
         if (!tt || tt.getAttribute("data-show") !== "true") return;
         showGlobalTooltipFor(btn, tooltipText);
       };
@@ -1532,7 +1532,7 @@
     titleRow.appendChild(title);
 
     const versionBadge = document.createElement("span");
-    versionBadge.id = "twosday-version-badge";
+    versionBadge.id = "nimbus-version-badge";
     versionBadge.style.cssText = [
       "font-size: 11px",
       "color: #a09b8c",
@@ -1659,7 +1659,7 @@
 
     // Benchmark info placeholder (populated when diagnostics data arrives)
     const benchmarkInfo = document.createElement("div");
-    benchmarkInfo.id = "twosday-threshold-benchmark";
+    benchmarkInfo.id = "nimbus-threshold-benchmark";
     benchmarkInfo.style.marginTop = "6px";
     benchmarkInfo.style.fontSize = "11px";
     benchmarkInfo.style.fontFamily = "'Beaufort for LOL', serif";
@@ -2030,12 +2030,12 @@
       }
 
       // Check if style already injected
-      if (root.querySelector('style[data-twosday-dropdown-color]')) {
+      if (root.querySelector('style[data-nimbus-dropdown-color]')) {
         return;
       }
 
       const rootStyle = document.createElement("style");
-      rootStyle.setAttribute("data-twosday-dropdown-color", "true");
+      rootStyle.setAttribute("data-nimbus-dropdown-color", "true");
       rootStyle.textContent = `
         :host .ui-dropdown {
           color: #CDBE91 !important;
@@ -2419,7 +2419,7 @@
     }
 
     // Update version badge
-    const versionBadge = document.getElementById("twosday-version-badge");
+    const versionBadge = document.getElementById("nimbus-version-badge");
     if (versionBadge && currentSettings.version) {
       versionBadge.textContent = `v${currentSettings.version}`;
     }
@@ -2762,7 +2762,7 @@
     // Search functionality
     searchInput.addEventListener("input", (e) => {
       const searchTerm = e.target.value.toLowerCase().trim();
-      const allChampions = window.__twosdayAllChampions || [];
+      const allChampions = window.__nimbusAllChampions || [];
       const filtered = allChampions.filter((champ) =>
         champ.name.toLowerCase().includes(searchTerm)
       );
@@ -2770,7 +2770,7 @@
     });
 
     // Store render function for bridge response
-    window.__twosdayChampionRenderer = renderChampionsGrid;
+    window.__nimbusChampionRenderer = renderChampionsGrid;
   }
 
   function closeChampionSelection() {
@@ -2778,8 +2778,8 @@
     if (dialog) {
       dialog.remove();
     }
-    delete window.__twosdayChampionRenderer;
-    delete window.__twosdayAllChampions;
+    delete window.__nimbusChampionRenderer;
+    delete window.__nimbusAllChampions;
   }
 
   function renderChampionsGrid(champions) {
@@ -2909,7 +2909,7 @@
     });
 
     // Store champion ID for later use
-    window.__twosdaySelectedChampionId = championId;
+    window.__nimbusSelectedChampionId = championId;
   }
 
   function closeSkinSelection() {
@@ -2917,7 +2917,7 @@
     if (dialog) {
       dialog.remove();
     }
-    delete window.__twosdaySelectedChampionId;
+    delete window.__nimbusSelectedChampionId;
   }
 
   function handleSkinSelection(championId, skinId) {
@@ -2953,11 +2953,11 @@
     }
 
     // Store champions for search functionality
-    window.__twosdayAllChampions = champions;
+    window.__nimbusAllChampions = champions;
 
     // Render champions
-    if (window.__twosdayChampionRenderer) {
-      window.__twosdayChampionRenderer(champions);
+    if (window.__nimbusChampionRenderer) {
+      window.__nimbusChampionRenderer(champions);
     } else {
       // Fallback: render directly
       renderChampionsGrid(champions);
@@ -3059,7 +3059,7 @@
 
   function openDiagnosticsDialog() {
     // If already open, close it
-    const existing = document.getElementById("twosday-diagnostics-dialog");
+    const existing = document.getElementById("nimbus-diagnostics-dialog");
     if (existing) {
       existing.remove();
       diagnosticsDialog = null;
@@ -3067,7 +3067,7 @@
     }
 
     const dialog = document.createElement("div");
-    dialog.id = "twosday-diagnostics-dialog";
+    dialog.id = "nimbus-diagnostics-dialog";
     dialog.style.position = "fixed";
     dialog.style.top = "0";
     dialog.style.left = "0";
@@ -3154,7 +3154,7 @@
     panel.appendChild(closeBtn);
 
     const body = document.createElement("div");
-    body.id = "twosday-diagnostics-body";
+    body.id = "nimbus-diagnostics-body";
     body.style.color = "#cdbe91";
     body.style.fontFamily = "'Beaufort for LOL', serif";
     body.style.fontSize = "12px";
@@ -3169,7 +3169,7 @@
     panel.appendChild(body);
 
     const foot = document.createElement("div");
-    foot.id = "twosday-diagnostics-foot";
+    foot.id = "nimbus-diagnostics-foot";
     foot.style.marginTop = "8px";
     foot.style.color = "#7e6f4e";
     foot.style.fontFamily = "'Beaufort for LOL', serif";
@@ -3207,8 +3207,8 @@
 
   function renderDiagnosticsDialog() {
     if (!diagnosticsDialog) return;
-    const body = document.getElementById("twosday-diagnostics-body");
-    const foot = document.getElementById("twosday-diagnostics-foot");
+    const body = document.getElementById("nimbus-diagnostics-body");
+    const foot = document.getElementById("nimbus-diagnostics-foot");
     if (!body || !foot) return;
 
     const errors = Array.isArray(diagnosticsState.errors) ? diagnosticsState.errors : [];
@@ -3258,7 +3258,7 @@
 
           let fixText;
           if (thresholdAtMax) {
-            fixText = `Fix: you're already at the maximum Injection Threshold. This usually means the injection is extremely slow. Try lighter mods, close heavy apps, move League/mods to an SSD, and consider adding antivirus exclusions for the League and 2SDAY folders. Then retry.`;
+            fixText = `Fix: you're already at the maximum Injection Threshold. This usually means the injection is extremely slow. Try lighter mods, close heavy apps, move League/mods to an SSD, and consider adding antivirus exclusions for the League and nimbus folders. Then retry.`;
           } else if (hasTrackerData) {
             fixText = `Fix: based on ${stats.confirmed_count} game(s), base skin confirmation takes up to ${stats.p90_ms}ms (p90). Recommended threshold: ${recS}s. Use the "Apply recommended" button below, or increase "Injection Threshold" manually.`;
           } else {
@@ -3287,9 +3287,9 @@
           return {
             title: "Injection exceeded the timeout (process was stopped)",
             details: [
-              `What it means: injection took longer than the allowed time, so 2SDAY stopped the process.`,
+              `What it means: injection took longer than the allowed time, so nimbus stopped the process.`,
               timeoutAtMax
-                ? `Fix: you're already at the maximum Monitor Auto-Resume Timeout. This usually means the injection is extremely slow. Try lighter mods, close heavy apps, move League/mods to an SSD, and consider adding antivirus exclusions for the League and 2SDAY folders. Then retry.`
+                ? `Fix: you're already at the maximum Monitor Auto-Resume Timeout. This usually means the injection is extremely slow. Try lighter mods, close heavy apps, move League/mods to an SSD, and consider adding antivirus exclusions for the League and nimbus folders. Then retry.`
                 : `Fix: increase "Monitor Auto-Resume Timeout (seconds)" and click Save. If the warning is still there, increase it again and Save again. Once the warning is gone, try again.`,
             ],
           };
@@ -3344,7 +3344,7 @@
   }
 
   function renderThresholdBenchmark() {
-    const el = document.getElementById("twosday-threshold-benchmark");
+    const el = document.getElementById("nimbus-threshold-benchmark");
     if (!el) return;
 
     const stats = diagnosticsState.baseSkinStats;
@@ -3365,7 +3365,7 @@
     let html;
     if (needsIncrease) {
       html = `<span style="color:#c8aa6e;">Based on ${label}, we recommend <span style="color:#c89b3c; font-weight:700;">${recS}s</span></span>`;
-      html += ` <button id="twosday-apply-recommended-btn" style="
+      html += ` <button id="nimbus-apply-recommended-btn" style="
         margin-left:4px; padding:1px 8px; border:1px solid #463714; background:#1e2328;
         color:#cdbe91; cursor:pointer; font-family:'Beaufort for LOL',serif; font-size:11px;
         vertical-align:middle;
@@ -3376,7 +3376,7 @@
 
     el.innerHTML = html;
 
-    const applyBtn = document.getElementById("twosday-apply-recommended-btn");
+    const applyBtn = document.getElementById("nimbus-apply-recommended-btn");
     if (applyBtn) {
       applyBtn.addEventListener("click", () => {
         if (bridge) {
@@ -3410,9 +3410,9 @@
     }
 
     // Restore last active item
-    const lastActiveNavItem = document.querySelector(".main-nav-bar > * > lol-uikit-navigation-item[twosdayLastActive]");
+    const lastActiveNavItem = document.querySelector(".main-nav-bar > * > lol-uikit-navigation-item[nimbusLastActive]");
     if (lastActiveNavItem) {
-      lastActiveNavItem.removeAttribute("twosdayLastActive")
+      lastActiveNavItem.removeAttribute("nimbusLastActive")
       lastActiveNavItem.setAttribute("active", true);
     }
 
@@ -3426,7 +3426,7 @@
 
     // If troubleshooting dialog is open, close it too (it is a separate fixed overlay).
     try {
-      const diag = document.getElementById("twosday-diagnostics-dialog");
+      const diag = document.getElementById("nimbus-diagnostics-dialog");
       if (diag) diag.remove();
       diagnosticsDialog = null;
     } catch (e) {}
@@ -3480,12 +3480,12 @@
     cleanup();
   }
 
-  // Listen for open settings event from 2SDAY-UI
-  window.addEventListener("twosday-open-settings", (e) => {
+  // Listen for open settings event from nimbus-UI
+  window.addEventListener("nimbus-open-settings", (e) => {
     const navItem =
       e.detail?.navItem ||
       document.querySelector(
-        "lol-uikit-navigation-item.menu_item_Golden.2SDAY"
+        "lol-uikit-navigation-item.menu_item_Golden.nimbus"
       );
     if (navItem) {
       // Toggle: if panel is already open, close it
@@ -3497,7 +3497,7 @@
     } else {
       log(
         "warn",
-        "Could not find Golden 2SDAY nav item to position settings panel"
+        "Could not find Golden nimbus nav item to position settings panel"
       );
     }
   });
@@ -3505,13 +3505,13 @@
   // Inject CSS
   function injectCSS() {
     // Remove existing CSS if it exists (to update with correct port)
-    const existingStyle = document.getElementById("twosday-settings-panel-css");
+    const existingStyle = document.getElementById("nimbus-settings-panel-css");
     if (existingStyle) {
       existingStyle.remove();
     }
 
     const style = document.createElement("style");
-    style.id = "twosday-settings-panel-css";
+    style.id = "nimbus-settings-panel-css";
     style.textContent = getCSSRules();
     document.head.appendChild(style);
   }

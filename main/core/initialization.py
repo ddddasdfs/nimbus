@@ -28,7 +28,7 @@ def initialize_core_components(args, injection_threshold: Optional[float] = None
     """
     set_config_option("General", "installed_version", APP_VERSION)
 
-    # Admin is optional in 2SDAY. It is only needed to suspend the game process
+    # Admin is optional in nimbus. It is only needed to suspend the game process
     # during injection (a reliability aid). ensure_admin_rights() offers elevation
     # but no longer forces it — if declined, we continue in a limited mode.
     running_as_admin = ensure_admin_rights()
@@ -74,8 +74,8 @@ def initialize_core_components(args, injection_threshold: Optional[float] = None
             try:
                 ctypes.windll.user32.MessageBoxW(
                     0,
-                    f"2SDAY failed to initialize:\n\n{str(e)}\n\nCheck the log file for details:\n{log.handlers[0].baseFilename if log.handlers else 'N/A'}",
-                    "2SDAY - Initialization Error",
+                    f"nimbus failed to initialize:\n\n{str(e)}\n\nCheck the log file for details:\n{log.handlers[0].baseFilename if log.handlers else 'N/A'}",
+                    "nimbus - Initialization Error",
                     0x50010  # MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST
                 )
             except Exception:
@@ -114,8 +114,8 @@ def initialize_core_components(args, injection_threshold: Optional[float] = None
             try:
                 ctypes.windll.user32.MessageBoxW(
                     0,
-                    f"2SDAY failed to initialize injection system:\n\n{str(e)}\n\nCheck the log file for details:\n{log.handlers[0].baseFilename if log.handlers else 'N/A'}",
-                    "2SDAY - Injection Error",
+                    f"nimbus failed to initialize injection system:\n\n{str(e)}\n\nCheck the log file for details:\n{log.handlers[0].baseFilename if log.handlers else 'N/A'}",
+                    "nimbus - Injection Error",
                     0x50010  # MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST
                 )
             except Exception:

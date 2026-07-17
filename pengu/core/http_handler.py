@@ -21,7 +21,7 @@ class HTTPHandler:
 
     Security Note:
         - Browser requests with an Origin header are only allowed from loopback origins.
-        - File-serving routes resolve paths under explicit 2SDAY-owned directories.
+        - File-serving routes resolve paths under explicit nimbus-owned directories.
     """
 
     def __init__(self, port: int):

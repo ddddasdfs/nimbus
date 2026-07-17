@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-System tray manager for 2SDAY
+System tray manager for nimbus
 """
 
 import threading
@@ -22,7 +22,7 @@ log = get_logger()
 
 
 class TrayManager:
-    """Manages the system tray icon for 2SDAY"""
+    """Manages the system tray icon for nimbus"""
     
     def __init__(self, quit_callback: Optional[Callable] = None):
         """
@@ -46,7 +46,7 @@ class TrayManager:
         image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
         
-        # Draw a simple "SC" logo (2SDAY)
+        # Draw a simple "SC" logo (nimbus)
         # Background circle (scaled 2x)
         draw.ellipse(TRAY_ICON_ELLIPSE_COORDS, fill=(0, 100, 200, 255), outline=(0, 50, 100, 255), width=TRAY_ICON_BORDER_WIDTH)
         
@@ -186,7 +186,7 @@ class TrayManager:
 
                 show_message_box_threaded(
                     f"Failed to open settings dialog:\n\n{e}",
-                    "2SDAY Settings",
+                    "nimbus Settings",
                     0x10,  # MB_ICONERROR
                 )
             except Exception:
@@ -195,7 +195,7 @@ class TrayManager:
     def _create_menu(self) -> pystray.Menu:
         """Create the context menu for the tray icon"""
         return pystray.Menu(
-            pystray.MenuItem(f"2SDAY v{APP_VERSION}", None, enabled=False),
+            pystray.MenuItem(f"nimbus v{APP_VERSION}", None, enabled=False),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Quit", self._on_quit)
         )
@@ -209,9 +209,9 @@ class TrayManager:
             menu = self._create_menu()
             
             self.icon = pystray.Icon(
-                "2SDAY",
+                "nimbus",
                 icon_image,
-                "2SDAY",
+                "nimbus",
                 menu,
                 default_action=self._on_icon_click
             )

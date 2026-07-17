@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Build script for 2SDAY using PyInstaller
+Build script for nimbus using PyInstaller
 Fast builds with Windows UI API support
 """
 
@@ -15,7 +15,7 @@ from pathlib import Path
 MIN_PYTHON = (3, 11)
 if sys.version_info < MIN_PYTHON:
     sys.stderr.write(
-        f"2SDAY build scripts require Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]} or newer.\n"
+        f"nimbus build scripts require Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]} or newer.\n"
         "Please re-run using an updated interpreter.\n"
     )
     sys.exit(1)
@@ -70,7 +70,7 @@ def build_with_pyinstaller():
         "pyinstaller",
         "--clean",
         "--noconfirm",
-        "2SDAY.spec",
+        "nimbus.spec",
     ]
     
     print(f"Running: {' '.join(cmd)}\n")
@@ -88,7 +88,7 @@ def organize_output():
     """Organize output files and verify"""
     print_step(3, 3, "Organizing Output & Verification")
     
-    dist_folder = Path("dist/2SDAY")
+    dist_folder = Path("dist/nimbus")
     
     if not dist_folder.exists():
         print("[ERROR] Build output not found!")
@@ -99,7 +99,7 @@ def organize_output():
 
 def main():
     """Main build process"""
-    print_header("2SDAY - PyInstaller Build")
+    print_header("nimbus - PyInstaller Build")
     
     start_time = time.time()
     
@@ -120,7 +120,7 @@ def main():
     
     print_header("[OK] BUILD COMPLETED SUCCESSFULLY!")
     
-    exe_path = Path("dist/2SDAY/2SDAY.exe")
+    exe_path = Path("dist/nimbus/nimbus.exe")
     
     if exe_path.exists():
         size_mb = exe_path.stat().st_size / (1024 * 1024)
@@ -139,8 +139,8 @@ def main():
         print(f"  - Good enough against casual theft")
         
         print(f"\nTo test:")
-        print(f"  cd dist\\2SDAY")
-        print(f"  2SDAY.exe")
+        print(f"  cd dist\\nimbus")
+        print(f"  nimbus.exe")
     else:
         print("[ERROR] Executable not found!")
         sys.exit(1)

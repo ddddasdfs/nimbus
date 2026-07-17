@@ -3,7 +3,7 @@
 """
 Update management package
 
-2SDAY note: the auto-updater has been removed for security. The download/execute
+nimbus note: the auto-updater has been removed for security. The download/execute
 path (update_downloader, update_installer) and the GitHub release client
 (github_client) are gone. UpdateSequence remains only as a no-op stub.
 """

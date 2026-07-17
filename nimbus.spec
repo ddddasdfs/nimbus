@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec file for 2SDAY
+PyInstaller spec file for nimbus
 Builds a standalone executable with Windows UI API support
 """
 
@@ -99,7 +99,7 @@ except Exception as e:
 # leak local test data into the shipped installer.
 pengu_loader_dir = Path('Pengu Loader')
 PENGU_LOADER_EXCLUDED_NAMES = {
-    '2sday.log',
+    'nimbus.log',
     'crash.log',
     'config',
     'datastore',
@@ -419,7 +419,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='2SDAY',
+    name='nimbus',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -442,5 +442,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='2SDAY',
+    name='nimbus',
 )

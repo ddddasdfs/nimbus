@@ -1,7 +1,7 @@
-"""Launcher auto-update logic for 2SDAY — DISABLED in 2SDAY.
+"""Launcher auto-update logic for nimbus — DISABLED in nimbus.
 
-Upstream 2SDAY downloaded the latest release ZIP from GitHub and executed it with
-no signature/hash verification while running as administrator. 2SDAY removes that
+Upstream nimbus downloaded the latest release ZIP from GitHub and executed it with
+no signature/hash verification while running as administrator. nimbus removes that
 path. `auto_update` is kept as a no-op for backward compatibility and never
 performs any network access or executes anything.
 """
@@ -20,11 +20,11 @@ def auto_update(
     progress_callback: Callable[[int], None],
     bytes_callback: Optional[Callable[[int, Optional[int]], None]] = None,
 ) -> bool:
-    """No-op. Auto-update was removed from 2SDAY for security.
+    """No-op. Auto-update was removed from nimbus for security.
 
     Always returns False (no update installed).
     """
-    log.info("auto_update() called but auto-update is disabled in 2SDAY; doing nothing.")
+    log.info("auto_update() called but auto-update is disabled in nimbus; doing nothing.")
     try:
         status_callback("Auto-update disabled")
     except Exception:

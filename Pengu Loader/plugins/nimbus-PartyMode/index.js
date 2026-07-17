@@ -1,20 +1,20 @@
 /**
- * @name 2SDAY-PartyMode
- * @author 2SDAY Team
+ * @name nimbus-PartyMode
+ * @author nimbus Team
  * @description Party Mode - See your friends' skins in game via P2P
- * @link https://github.com/ddddasdfs/2SDAY
+ * @link https://github.com/ddddasdfs/Nimbus
  */
 (function initPartyMode() {
-  const LOG_PREFIX = "[2SDAY-PartyMode]";
+  const LOG_PREFIX = "[nimbus-PartyMode]";
   let BRIDGE_PORT = 50000;
   let BRIDGE_URL = `ws://127.0.0.1:${BRIDGE_PORT}`;
-  const BRIDGE_PORT_STORAGE_KEY = "2sday_bridge_port";
+  const BRIDGE_PORT_STORAGE_KEY = "nimbus_bridge_port";
   const DISCOVERY_START_PORT = 50000;
   const DISCOVERY_END_PORT = 50010;
 
-  const PANEL_ID = "twosday-party-panel";
-  const BUTTON_ID = "twosday-party-button";
-  const LOBBY_BUTTON_ID = "twosday-party-lobby-button";
+  const PANEL_ID = "nimbus-party-panel";
+  const BUTTON_ID = "nimbus-party-button";
+  const LOBBY_BUTTON_ID = "nimbus-party-lobby-button";
 
   let bridgeSocket = null;
   let bridgeReady = false;
@@ -493,10 +493,10 @@
       border: 2px solid rgba(200, 170, 110, 0.3);
       border-top-color: #c8aa6e;
       border-radius: 50%;
-      animation: twosday-party-spin 0.8s linear infinite;
+      animation: nimbus-party-spin 0.8s linear infinite;
     }
 
-    @keyframes twosday-party-spin {
+    @keyframes nimbus-party-spin {
       to { transform: rotate(360deg); }
     }
 
@@ -550,7 +550,7 @@
   }
 
   function injectStyles() {
-    const styleId = "twosday-party-mode-styles";
+    const styleId = "nimbus-party-mode-styles";
     if (document.getElementById(styleId)) return;
 
     const style = document.createElement("style");
@@ -817,7 +817,7 @@
                 ${escapeHtml(statusText)}</span>
                 ${skinInfo ? `<span class="peer-skin">${skinInfo}</span>` : ""}
               </div>
-              <button class="peer-remove" title="Remove" onclick="window.twosdayPartyRemovePeer(${peer.summoner_id})">
+              <button class="peer-remove" title="Remove" onclick="window.nimbusPartyRemovePeer(${peer.summoner_id})">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                 </svg>
@@ -902,7 +902,7 @@
   }
 
   // Global function for remove button onclick
-  window.twosdayPartyRemovePeer = function (summonerId) {
+  window.nimbusPartyRemovePeer = function (summonerId) {
     sendBridgeMessage({ type: "party-remove-peer", summoner_id: summonerId });
   };
 

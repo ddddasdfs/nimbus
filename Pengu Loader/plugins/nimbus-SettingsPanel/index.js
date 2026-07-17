@@ -438,6 +438,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      /* The flyout itself is overflow:visible, so without this the panel simply runs
+         off-screen as settings are added. Cap it and scroll the content instead. */
+      max-height: 68vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: #785a28 transparent;
+    }
+    #${FLYOUT_ID} form::-webkit-scrollbar {
+      width: 6px;
+    }
+    #${FLYOUT_ID} form::-webkit-scrollbar-track {
+      background: rgba(1,10,19,0.4);
+    }
+    #${FLYOUT_ID} form::-webkit-scrollbar-thumb {
+      background: #785a28;
+      border-radius: 3px;
+    }
+    #${FLYOUT_ID} form::-webkit-scrollbar-thumb:hover {
+      background: #c8aa6e;
     }
     
     #${FLYOUT_ID} .settings-link {
@@ -552,12 +572,76 @@
       max-height: 160px;
       overflow-y: auto;
     }
-    #${FLYOUT_ID} .settings-emotes-caption {
+    /* The swap: two slots joined by a connector. The diamond echoes the panel's
+       existing slider handles rather than inventing new decoration. */
+    #${FLYOUT_ID} .settings-emote-swap {
       width: 100%;
-      margin-top: 10px;
-      color: #a09b8c;
-      font-size: 12px;
-      letter-spacing: 0.03em;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+    #${FLYOUT_ID} .settings-emote-slot {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      padding: 7px 10px;
+      background: linear-gradient(to bottom, rgba(10,20,40,0.6), rgba(1,10,19,0.65));
+      border: 1px solid rgba(120,90,40,0.5);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    #${FLYOUT_ID} .settings-emote-slot:hover {
+      border-color: #c8aa6e;
+    }
+    #${FLYOUT_ID} .settings-emote-slot.editing {
+      border-color: #f0c453;
+      box-shadow: 0 0 8px rgba(240,190,70,0.3), inset 0 0 6px rgba(240,190,70,0.1);
+    }
+    #${FLYOUT_ID} .settings-emote-slot-cap {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8a8272;
+    }
+    #${FLYOUT_ID} .settings-emote-slot-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #c89b3c;
+      font-family: "Beaufort for LOL", serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #${FLYOUT_ID} .settings-emote-slot-val.empty {
+      color: #6c6656;
+      font-weight: 400;
+      font-style: italic;
+    }
+    #${FLYOUT_ID} .settings-emote-link {
+      align-self: center;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      padding: 3px 0;
+      color: #785a28;
+      font-size: 9px;
+      line-height: 1;
+    }
+    #${FLYOUT_ID} .settings-emote-link::before,
+    #${FLYOUT_ID} .settings-emote-link::after {
+      content: "";
+      flex: 1 1 auto;
+      height: 1px;
+      background: rgba(120,90,40,0.5);
+    }
+    #${FLYOUT_ID} .settings-emote-note {
+      width: 100%;
+      margin-top: 6px;
+      color: #8a8272;
+      font-size: 11px;
+      line-height: 1.45;
     }
     #${FLYOUT_ID} .settings-emotes-search {
       width: 100%;
@@ -575,17 +659,16 @@
       outline: none;
       border-color: #c8aa6e;
     }
-    #${FLYOUT_ID} .settings-emotes-summary {
+    #${FLYOUT_ID} .settings-emote-picker {
       width: 100%;
-      margin-top: 8px;
-      padding: 6px 10px;
-      background: linear-gradient(to bottom, rgba(10,20,40,0.7), rgba(1,10,19,0.7));
-      border: 1px solid rgba(120,90,40,0.5);
+      margin-top: 6px;
+      padding: 8px;
+      background: rgba(1,10,19,0.5);
+      border: 1px solid rgba(120,90,40,0.4);
       border-radius: 2px;
-      color: #f0e6d2;
-      font-size: 12px;
-      font-family: "Beaufort for LOL", serif;
-      line-height: 1.5;
+    }
+    #${FLYOUT_ID} .settings-emote-picker.hidden {
+      display: none;
     }
     #${FLYOUT_ID} .settings-emotes-empty {
       font-size: 12px;
@@ -1269,6 +1352,7 @@
   const EMOTE_MAX_ROWS = 40; // 2000+ emotes: cap the DOM, let search narrow it
   let emoteCatalog = [];
   let emoteState = { sourceId: null, targetId: null, enabled: false, harvested: false };
+  let emoteEditing = null; // null | "source" | "target" - only one picker open at a time
 
   function emoteNameOf(id) {
     if (!id) return null;
@@ -1276,17 +1360,64 @@
     return found ? found.name : id;
   }
 
+  function renderEmoteSwap() {
+    const slots = [
+      { which: "source", cap: "You'll see", empty: "Choose an emote…", id: emoteState.sourceId },
+      { which: "target", cap: "when you use", empty: "Choose one you own…", id: emoteState.targetId },
+    ];
+    slots.forEach(({ which, cap, empty, id }) => {
+      const slot = document.getElementById(`nimbus-emote-slot-${which}`);
+      if (!slot) return;
+      slot.classList.toggle("editing", emoteEditing === which);
+      const capEl = slot.querySelector(".settings-emote-slot-cap");
+      const valEl = slot.querySelector(".settings-emote-slot-val");
+      if (capEl) capEl.textContent = cap;
+      if (valEl) {
+        const name = emoteNameOf(id);
+        valEl.textContent = name || empty;
+        valEl.classList.toggle("empty", !name);
+      }
+    });
+
+    const picker = document.getElementById("nimbus-emote-picker");
+    if (picker) picker.classList.toggle("hidden", emoteEditing === null);
+    if (emoteEditing) renderEmotePicker(emoteEditing);
+
+    const note = document.getElementById("nimbus-emote-note");
+    if (note) {
+      if (!emoteState.harvested) {
+        note.textContent = "Prepare emotes first — one-time, about a minute.";
+      } else if (!emoteState.sourceId || !emoteState.targetId) {
+        note.textContent = "Pick both: an emote you want, and one you own to replace.";
+      } else if (!emoteState.enabled) {
+        note.textContent = "Tick the box above to apply this swap.";
+      } else {
+        note.textContent = "Equip that emote in your wheel — only you will see the swap.";
+      }
+    }
+  }
+
+  function openEmotePicker(which) {
+    emoteEditing = emoteEditing === which ? null : which;
+    const search = document.getElementById("emote-picker-search");
+    if (search && emoteEditing) {
+      search.value = "";
+      setTimeout(() => search.focus(), 0);
+    }
+    renderEmoteSwap();
+  }
+
   function renderEmotePicker(which) {
-    const list = document.getElementById(
-      which === "source" ? "nimbus-emote-source-list" : "nimbus-emote-target-list"
-    );
-    const search = document.getElementById(
-      which === "source" ? "emote-source-search" : "emote-target-search"
-    );
+    const list = document.getElementById("nimbus-emote-picker-list");
+    const search = document.getElementById("emote-picker-search");
     if (!list) return;
 
     const selectedId = which === "source" ? emoteState.sourceId : emoteState.targetId;
     const query = ((search && search.value) || "").trim().toLowerCase();
+    if (search) {
+      search.placeholder =
+        which === "source" ? "Search 2000+ emotes…" : "Search the emote you'll equip…";
+    }
     list.innerHTML = "";
 
     if (!emoteCatalog.length) {
@@ -1345,6 +1476,7 @@
             id: nextId,
           });
         }
+        emoteEditing = null; // choosing closes the picker
       });
       list.appendChild(row);
     });
@@ -1354,38 +1486,6 @@
       more.className = "settings-emotes-empty";
       more.textContent = `Showing ${EMOTE_MAX_ROWS} of ${matches.length} — search to narrow it down.`;
       list.appendChild(more);
-    }
-  }
-
-  function renderEmoteSummary() {
-    const el = document.getElementById("nimbus-emote-summary");
-    if (!el) return;
-    el.innerHTML = "";
-
-    if (!emoteState.harvested) {
-      el.textContent = "Prepare emotes first (one-time, ~1-2 min).";
-      return;
-    }
-    const src = emoteNameOf(emoteState.sourceId);
-    const tgt = emoteNameOf(emoteState.targetId);
-    if (!src || !tgt) {
-      el.textContent = "Pick the emote you want, and one you own to replace.";
-      return;
-    }
-    const star = document.createElement("span");
-    star.className = "fav-b-star";
-    star.textContent = "★";
-    const name = document.createElement("span");
-    name.className = "settings-emotes-name";
-    name.textContent = src;
-    const tail = document.createElement("span");
-    tail.textContent = ` shows when you use “${tgt}”`;
-    el.append(star, " You'll see ", name, tail);
-    if (!emoteState.enabled) {
-      const off = document.createElement("div");
-      off.className = "settings-emotes-replaces";
-      off.textContent = "Turn on the checkbox above to apply it.";
-      el.appendChild(off);
     }
   }
 
@@ -1409,15 +1509,13 @@
     const enabledBox = document.getElementById("emote-enabled-checkbox");
     if (enabledBox) enabledBox.checked = emoteState.enabled;
 
-    renderEmotePicker("source");
-    renderEmotePicker("target");
-    renderEmoteSummary();
+    renderEmoteSwap();
     renderEmoteHarvest();
   }
 
   function handleEmoteHarvest(payload) {
     const btn = document.getElementById("nimbus-emote-harvest");
-    const el = document.getElementById("nimbus-emote-summary");
+    const el = document.getElementById("nimbus-emote-note");
     if (!payload) return;
     if (btn && !payload.done) {
       btn.disabled = true;
@@ -2333,34 +2431,66 @@
     emoteWrapper.appendChild(emoteText);
     emoteSection.appendChild(emoteWrapper);
 
-    const emoteSummary = document.createElement("div");
-    emoteSummary.id = "nimbus-emote-summary";
-    emoteSummary.className = "settings-emotes-summary";
-    emoteSection.appendChild(emoteSummary);
+    // The swap reads as one statement: "You'll see X / when you use Y".
+    // Each slot opens the single shared picker below - never two lists at once.
+    const swap = document.createElement("div");
+    swap.className = "settings-emote-swap";
 
-    // Picker builder: a caption, a search box and a scrollable result list.
-    const buildPicker = (which, caption, placeholder) => {
+    const makeSlot = (which) => {
+      const slot = document.createElement("div");
+      slot.className = "settings-emote-slot";
+      slot.id = `nimbus-emote-slot-${which}`;
+      slot.setAttribute("role", "button");
+      slot.tabIndex = 0;
       const cap = document.createElement("div");
-      cap.className = "settings-emotes-caption";
-      cap.textContent = caption;
-      emoteSection.appendChild(cap);
-
-      const search = document.createElement("input");
-      search.type = "text";
-      search.className = "settings-emotes-search";
-      search.id = which === "source" ? "emote-source-search" : "emote-target-search";
-      search.placeholder = placeholder;
-      search.addEventListener("input", () => renderEmotePicker(which));
-      emoteSection.appendChild(search);
-
-      const list = document.createElement("div");
-      list.id = which === "source" ? "nimbus-emote-source-list" : "nimbus-emote-target-list";
-      list.className = "settings-emotes-list";
-      emoteSection.appendChild(list);
+      cap.className = "settings-emote-slot-cap";
+      const val = document.createElement("div");
+      val.className = "settings-emote-slot-val";
+      slot.append(cap, val);
+      slot.addEventListener("click", () => openEmotePicker(which));
+      slot.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openEmotePicker(which);
+        }
+      });
+      return slot;
     };
 
-    buildPicker("source", "Emote you want to see:", "Search 2000+ emotes…");
-    buildPicker("target", "Emote you own to replace:", "Search the emote you'll equip…");
+    const link = document.createElement("div");
+    link.className = "settings-emote-link";
+    link.textContent = "◆"; // echoes the panel's slider handles
+    link.setAttribute("aria-hidden", "true");
+
+    swap.append(makeSlot("source"), link, makeSlot("target"));
+    emoteSection.appendChild(swap);
+
+    const picker = document.createElement("div");
+    picker.id = "nimbus-emote-picker";
+    picker.className = "settings-emote-picker hidden";
+    const pickerSearch = document.createElement("input");
+    pickerSearch.type = "text";
+    pickerSearch.className = "settings-emotes-search";
+    pickerSearch.id = "emote-picker-search";
+    pickerSearch.addEventListener("input", () => {
+      if (emoteEditing) renderEmotePicker(emoteEditing);
+    });
+    pickerSearch.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        emoteEditing = null;
+        renderEmoteSwap();
+      }
+    });
+    const pickerList = document.createElement("div");
+    pickerList.id = "nimbus-emote-picker-list";
+    pickerList.className = "settings-emotes-list";
+    picker.append(pickerSearch, pickerList);
+    emoteSection.appendChild(picker);
+
+    const emoteNote = document.createElement("div");
+    emoteNote.id = "nimbus-emote-note";
+    emoteNote.className = "settings-emote-note";
+    emoteSection.appendChild(emoteNote);
 
     const emoteHarvest = document.createElement("button");
     emoteHarvest.type = "button";

@@ -260,16 +260,57 @@ class MessageHandler:
         except Exception as e:
             self._send_response(json.dumps({"type": "favorite-unpinned", "success": False, "error": str(e)}))
 
+    def _owned_emote_nums(self):
+        """Riot emote ids the player owns, from the LCU inventory.
+
+        Returns a set of ints, or None when the inventory can't be read (client
+        closed, endpoint changed). None means "unknown" - callers must not treat
+        that as "owns nothing".
+        """
+        try:
+            lcu = getattr(self.skin_scraper, "lcu", None)
+            if lcu is None:
+                return None
+            data = lcu.get("/lol-inventory/v2/inventory/EMOTE")
+            if not isinstance(data, list):
+                return None
+            nums = set()
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                item_id = item.get("itemId")
+                if item_id is None:
+                    continue
+                try:
+                    nums.add(int(item_id))
+                except (TypeError, ValueError):
+                    continue
+            log.info(f"[EMOTE] Owned emotes from inventory: {len(nums)}")
+            return nums
+        except Exception as e:  # noqa: BLE001
+            log.debug(f"[EMOTE] Could not read owned emotes: {e}")
+            return None
+
     def _emotes_payload(self) -> str:
-        """Emote catalog (from the game's own files) + the current source/target choice."""
+        """Emote catalog (from the game's own files) + the current source/target choice.
+
+        Each entry carries `owned`: True/False, or None when the emote has no Riot
+        number in the game files and ownership therefore can't be determined.
+        """
         from utils.core.emote_assets import is_harvested
         from utils.core.emote_catalog import load_game_emotes
         from utils.core.emotes import get_source_emote, get_target_emote, is_emote_enabled
 
-        emotes = [
-            {"id": e.id, "name": e.name, "category": e.category}
-            for e in load_game_emotes()
-        ]
+        owned_nums = self._owned_emote_nums()
+        emotes = []
+        for e in load_game_emotes():
+            if owned_nums is None or e.emote_num is None:
+                owned = None  # unknown, not "unowned"
+            else:
+                owned = e.emote_num in owned_nums
+            emotes.append({
+                "id": e.id, "name": e.name, "category": e.category, "owned": owned,
+            })
         return json.dumps({
             "type": "emotes-data",
             "emotes": emotes,

@@ -433,30 +433,23 @@
       width: 100%;
     }
     
-    #${FLYOUT_ID} form {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      /* The flyout itself is overflow:visible, so without this the panel simply runs
-         off-screen as settings are added. Cap it and scroll the content instead. */
-      max-height: 68vh;
-      overflow-y: auto;
-      overflow-x: hidden;
+    /* The settings body is a div (#nimbus-settings-form), not a <form>. Height/overflow
+       are set inline there; this styles its scrollbar to match the hextech frame. */
+    #nimbus-settings-form {
       scrollbar-width: thin;
-      scrollbar-color: #785a28 transparent;
+      scrollbar-color: #785a28 rgba(1,10,19,0.4);
     }
-    #${FLYOUT_ID} form::-webkit-scrollbar {
+    #nimbus-settings-form::-webkit-scrollbar {
       width: 6px;
     }
-    #${FLYOUT_ID} form::-webkit-scrollbar-track {
+    #nimbus-settings-form::-webkit-scrollbar-track {
       background: rgba(1,10,19,0.4);
     }
-    #${FLYOUT_ID} form::-webkit-scrollbar-thumb {
+    #nimbus-settings-form::-webkit-scrollbar-thumb {
       background: #785a28;
       border-radius: 3px;
     }
-    #${FLYOUT_ID} form::-webkit-scrollbar-thumb:hover {
+    #nimbus-settings-form::-webkit-scrollbar-thumb:hover {
       background: #c8aa6e;
     }
     
@@ -1428,13 +1421,21 @@
       return;
     }
 
+    // Targets must be emotes you can actually equip, so drop the ones we know you
+    // don't own. owned === null means "couldn't tell" (no Riot id) - keep those.
+    let pool = emoteCatalog;
+    if (which === "target") {
+      pool = emoteCatalog.filter((e) => e.owned !== false);
+      pool = pool.slice().sort((a, b) => (b.owned === true) - (a.owned === true));
+    }
+
     const matches = query
-      ? emoteCatalog.filter(
+      ? pool.filter(
           (e) =>
             e.name.toLowerCase().includes(query) ||
             (e.category || "").toLowerCase().includes(query)
         )
-      : emoteCatalog;
+      : pool;
 
     if (!matches.length) {
       const none = document.createElement("div");
@@ -1455,12 +1456,14 @@
       nameEl.className = "settings-emotes-name";
       nameEl.textContent = emote.name; // textContent = no injection surface
       meta.appendChild(nameEl);
-      if (emote.category) {
-        const cat = document.createElement("div");
-        cat.className = "settings-emotes-replaces";
-        cat.textContent = emote.category;
-        meta.appendChild(cat);
+      const sub = document.createElement("div");
+      sub.className = "settings-emotes-replaces";
+      if (which === "target") {
+        sub.textContent = emote.owned === true ? "You own this" : "Ownership unknown";
+      } else {
+        sub.textContent = emote.category || "";
       }
+      meta.appendChild(sub);
       row.appendChild(meta);
 
       const check = document.createElement("div");
@@ -2018,10 +2021,17 @@
 
     // Create settings form
     const form = document.createElement("div");
+    form.id = "nimbus-settings-form";
     form.style.width = "100%";
     form.style.display = "flex";
     form.style.flexDirection = "column";
     form.style.alignItems = "center";
+    // The flyout is overflow:visible with no height cap, so without this the panel
+    // runs off the bottom of the screen. Set inline: sibling styles here are inline too.
+    form.style.maxHeight = "62vh";
+    form.style.overflowY = "auto";
+    form.style.overflowX = "hidden";
+    form.style.paddingRight = "6px";
 
     function getOrCreateGlobalTooltip() {
       let el = document.getElementById("nimbus-global-tooltip");

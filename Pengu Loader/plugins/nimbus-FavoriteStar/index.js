@@ -7,6 +7,7 @@
 (function initFavoriteStar() {
   const LOG_PREFIX = "[nimbus-FavoriteStar]";
   const STAR_ID = "nimbus-favorite-star";
+  const BANNER_ID = "nimbus-favorite-banner";
   const SKIN_STATE_EVENT = "lu-skin-monitor-state"; // dispatched by nimbus-SkinMonitor
   const STAR_FILLED = "★"; // ★
   const STAR_EMPTY = "☆";  // ☆
@@ -16,6 +17,8 @@
   let isInChampSelect = false;
   let favoritesMap = {}; // { "<championId>": <skinId:int> | "path:<rel>" }
   let starElement = null;
+  let rollGuardChamp = null;          // champion we've already tried to auto-roll for
+  const champDataCache = new Map();   // championId -> Map(skinId -> name)
 
   const CSS_RULES = `
     #${STAR_ID} {
@@ -44,6 +47,36 @@
       border-color: #f0c453;
       box-shadow: 0 0 11px rgba(240,190,70,0.8), inset 0 0 7px rgba(240,190,70,0.35);
     }
+
+    #${BANNER_ID} {
+      position: fixed;
+      left: 50%;
+      bottom: calc(10% + 172px);
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      background: linear-gradient(to bottom, rgba(10,20,40,0.92), rgba(1,10,19,0.92));
+      border: 1px solid #785a28;
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6), inset 0 0 8px rgba(240,190,70,0.12);
+      color: #f0e6d2;
+      font-family: "Beaufort for LOL", serif;
+      font-size: 13px;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      pointer-events: none;
+      -webkit-user-select: none;
+    }
+    #${BANNER_ID} .fav-b-star {
+      color: #ffd65c;
+      font-size: 15px;
+      text-shadow: 0 0 6px rgba(255,200,70,0.8);
+    }
+    #${BANNER_ID} .fav-b-name { color: #c89b3c; font-weight: 700; }
+    #${BANNER_ID} .fav-b-hint { color: #8a8272; font-size: 11px; }
   `;
 
   function waitForBridge() {
@@ -123,6 +156,8 @@
     const data = payload && payload.favorites;
     favoritesMap = data && typeof data === "object" ? data : {};
     if (starElement) renderStarState();
+    updateBanner();
+    scheduleAutoRoll();
   }
 
   function onStarClick(ev) {
@@ -210,6 +245,8 @@
     } else if (!isInChampSelect && wasInChampSelect) {
       log("debug", "Left ChampSelect - removing favorite star");
       removeStar();
+      removeBanner();
+      rollGuardChamp = null;
     }
   }
 
@@ -221,6 +258,133 @@
     } else {
       renderStarState();
     }
+    updateBanner();
+    scheduleAutoRoll();
+  }
+
+  // --- Name resolution (client's local game data; same endpoint the other plugins use) ---
+  function fetchChampData(championId) {
+    if (champDataCache.has(championId)) return Promise.resolve(champDataCache.get(championId));
+    return fetch(`/lol-game-data/assets/v1/champions/${championId}.json`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data || !Array.isArray(data.skins)) return null;
+        const m = new Map();
+        data.skins.forEach((s) => {
+          m.set(Number(s.id), s.name);
+          if (Array.isArray(s.chromas)) {
+            s.chromas.forEach((c) => {
+              const nm = c.name && c.name !== data.name ? c.name : `${s.name} (chroma)`;
+              m.set(Number(c.id), nm);
+            });
+          }
+        });
+        champDataCache.set(championId, m);
+        return m;
+      })
+      .catch(() => null);
+  }
+
+  function fetchSkinName(championId, skinId) {
+    return fetchChampData(championId).then((m) => (m ? m.get(Number(skinId)) || null : null));
+  }
+
+  // --- Confirmation banner: "★ You'll get: <skin>" while a pin is active ---
+  function ensureBanner() {
+    let b = document.getElementById(BANNER_ID);
+    if (!b) {
+      b = document.createElement("div");
+      b.id = BANNER_ID;
+      const star = document.createElement("span");
+      star.className = "fav-b-star";
+      star.textContent = "★";
+      const lead = document.createElement("span");
+      lead.textContent = "You'll get";
+      const name = document.createElement("span");
+      name.className = "fav-b-name";
+      const hint = document.createElement("span");
+      hint.className = "fav-b-hint";
+      hint.textContent = "· unless you pick another skin";
+      b.append(star, lead, name, hint);
+      document.body.appendChild(b);
+      b._nameEl = name;
+    }
+    return b;
+  }
+
+  function removeBanner() {
+    document.getElementById(BANNER_ID)?.remove();
+  }
+
+  function updateBanner() {
+    if (!isInChampSelect) return removeBanner();
+    const { championId } = getContext();
+    if (championId === null) return removeBanner();
+    const pin = favoritesMap[String(championId)];
+    if (pin === undefined || pin === null) return removeBanner();
+
+    const b = ensureBanner();
+    if (typeof pin === "string") {
+      b._nameEl.textContent = "your custom mod"; // path: value
+      return;
+    }
+    fetchSkinName(championId, Number(pin)).then((nm) => {
+      // Guard: banner may have been removed while the fetch was in flight.
+      if (document.getElementById(BANNER_ID) === b) {
+        b._nameEl.textContent = nm || "skin " + pin;
+      }
+    });
+  }
+
+  // --- Best-effort auto-roll: navigate the carousel to center the pinned skin ---
+  // Reads each tile's skin id from its thumbnail background-image URL
+  // (…/champion-tiles/<champ>/<skinId>.jpg). Works for owned skins reliably; for
+  // unowned skins it previews (the client may snap the *selection* back, but the
+  // banner remains the authoritative "you'll get this" indicator).
+  function getTileSkinId(item) {
+    const els = [item].concat(Array.from(item.querySelectorAll("*")));
+    for (const el of els) {
+      let bg = "";
+      try { bg = window.getComputedStyle(el).backgroundImage || ""; } catch (e) { bg = ""; }
+      const m = bg.match(/\/(\d{4,7})\.(?:jpg|jpeg|png|webp)/i);
+      if (m) return Number(m[1]);
+    }
+    return null;
+  }
+
+  function centerPinnedSkin() {
+    if (!isInChampSelect) return;
+    const { championId } = getContext();
+    if (championId === null) return;
+    const pin = favoritesMap[String(championId)];
+    if (pin === undefined || pin === null || typeof pin === "string") return;
+    const target = Number(pin);
+
+    const central = findCentralItem();
+    if (central && getTileSkinId(central) === target) return; // already centered
+
+    const items = document.querySelectorAll(".skin-selection-item");
+    for (const item of items) {
+      if (getTileSkinId(item) === target) {
+        try {
+          item.click();
+          log("info", `Auto-rolled carousel toward pinned skin ${target}`);
+        } catch (e) { /* ignore */ }
+        return;
+      }
+    }
+  }
+
+  // A couple of bounded attempts per champion, after injection has settled.
+  function scheduleAutoRoll() {
+    if (!isInChampSelect) return;
+    const { championId } = getContext();
+    if (championId === null || rollGuardChamp === championId) return;
+    const pin = favoritesMap[String(championId)];
+    if (pin === undefined || pin === null || typeof pin === "string") return;
+    rollGuardChamp = championId;
+    setTimeout(centerPinnedSkin, 1500);
+    setTimeout(centerPinnedSkin, 3200);
   }
 
   async function init() {

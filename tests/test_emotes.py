@@ -1,121 +1,126 @@
-"""Tests for the emote catalog, state, and active-emote resolver.
+"""Emote selection state and resolution.
 
-Emotes are account-wide: one global active emote + an enable flag, resolved to a
-.fantome path that the injector layers on top of the champion skin.
+A choice is a PAIR (source you want -> target you own), because you cannot equip an
+emote you don't own. Resolution must be inert unless everything lines up, and must
+never raise: skin injection rides the same code path.
 """
-import hashlib
-import json
-
 import utils.core.emotes as em
+from utils.core.emote_catalog import GameEmote
 
 
-def _setup(tmp_path, monkeypatch):
-    monkeypatch.setattr(em, "get_user_data_dir", lambda: tmp_path)
+def _state(monkeypatch):
     store = {}
     monkeypatch.setattr(em, "get_config_option", lambda s, o, d="": store.get((s, o), d))
     monkeypatch.setattr(em, "set_config_option", lambda s, o, v: store.__setitem__((s, o), v))
-    (tmp_path / "emotes" / "mods").mkdir(parents=True)
     return store
 
 
-def _manifest(tmp_path, emotes):
-    (tmp_path / "emotes" / "emotes.json").write_text(
-        json.dumps({"version": 1, "emotes": emotes}), encoding="utf-8"
+def _emote(eid, name="X"):
+    return GameEmote(
+        id=eid, name=name, category="general",
+        base_path=f"assets/loadouts/summoneremotes/{eid}",
+        variants={"vfx": f"assets/loadouts/summoneremotes/{eid}_vfx.tex"},
     )
 
 
-def _fantome(tmp_path, rel, data=b"MOD"):
-    p = tmp_path / "emotes" / rel
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_bytes(data)
-    return p
+def _catalog(monkeypatch, emotes):
+    by_id = {e.id: e for e in emotes}
+    monkeypatch.setattr(em, "get_game_emote", lambda i: by_id.get(i))
 
 
-def test_catalog_parses_valid(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    _manifest(tmp_path, [{"id": "poro-party", "name": "Poro Party", "file": "mods/poro-party.fantome"}])
-    cat = em.load_catalog()
-    assert len(cat) == 1
-    assert cat[0].id == "poro-party" and cat[0].name == "Poro Party"
-
-
-def test_catalog_skips_bad_id_and_unsafe_path(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    _manifest(tmp_path, [
-        {"id": "Bad_ID", "name": "x", "file": "mods/x.fantome"},
-        {"id": "esc", "name": "y", "file": "../escape.fantome"},
-        {"id": "good", "name": "z", "file": "mods/z.fantome"},
-    ])
-    assert [e.id for e in em.load_catalog()] == ["good"]
-
-
-def test_catalog_missing_or_wrong_version_empty(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    assert em.load_catalog() == []
-    (tmp_path / "emotes" / "emotes.json").write_text(
-        json.dumps({"version": 2, "emotes": []}), encoding="utf-8"
-    )
-    assert em.load_catalog() == []
-
-
-def test_catalog_corrupt_json_empty(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    (tmp_path / "emotes" / "emotes.json").write_text("{ not json", encoding="utf-8")
-    assert em.load_catalog() == []
-
-
-def test_state_roundtrip(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
+def test_state_defaults_and_roundtrip(monkeypatch):
+    _state(monkeypatch)
     assert em.is_emote_enabled() is False
-    assert em.get_active_emote() is None
+    assert em.get_source_emote() is None and em.get_target_emote() is None
+
     em.set_emote_enabled(True)
-    em.set_active_emote("poro-party")
+    em.set_source_emote("want-this")
+    em.set_target_emote("own-this")
     assert em.is_emote_enabled() is True
-    assert em.get_active_emote() == "poro-party"
+    assert em.get_source_emote() == "want-this"
+    assert em.get_target_emote() == "own-this"
 
 
-def test_resolve_disabled_returns_none(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    _manifest(tmp_path, [{"id": "poro", "name": "P", "file": "mods/poro.fantome"}])
-    _fantome(tmp_path, "mods/poro.fantome")
-    em.set_active_emote("poro")  # enabled still false
+def test_pair_resolves_when_complete(monkeypatch):
+    _state(monkeypatch)
+    _catalog(monkeypatch, [_emote("want-this", "Want"), _emote("own-this", "Own")])
+    em.set_emote_enabled(True)
+    em.set_source_emote("want-this")
+    em.set_target_emote("own-this")
+
+    pair = em.resolve_emote_pair()
+    assert pair is not None
+    source, target = pair
+    assert (source.id, target.id) == ("want-this", "own-this")
+
+
+def test_pair_none_when_disabled(monkeypatch):
+    _state(monkeypatch)
+    _catalog(monkeypatch, [_emote("a"), _emote("b")])
+    em.set_source_emote("a")
+    em.set_target_emote("b")  # enabled defaults false
+    assert em.resolve_emote_pair() is None
+
+
+def test_pair_none_when_incomplete_or_identical(monkeypatch):
+    _state(monkeypatch)
+    _catalog(monkeypatch, [_emote("a"), _emote("b")])
+    em.set_emote_enabled(True)
+
+    em.set_source_emote("a")
+    assert em.resolve_emote_pair() is None  # no target
+
+    em.set_target_emote("a")
+    assert em.resolve_emote_pair() is None  # same emote is a no-op
+
+
+def test_pair_none_when_id_unknown(monkeypatch):
+    _state(monkeypatch)
+    _catalog(monkeypatch, [_emote("a")])
+    em.set_emote_enabled(True)
+    em.set_source_emote("a")
+    em.set_target_emote("ghost")  # not in catalog
+    assert em.resolve_emote_pair() is None
+
+
+def test_fantome_none_until_assets_harvested(monkeypatch):
+    _state(monkeypatch)
+    _catalog(monkeypatch, [_emote("a"), _emote("b")])
+    em.set_emote_enabled(True)
+    em.set_source_emote("a")
+    em.set_target_emote("b")
+
+    import utils.core.emote_assets as assets
+    monkeypatch.setattr(assets, "is_harvested", lambda: False)
     assert em.resolve_active_emote_fantome() is None
 
 
-def test_resolve_enabled_present(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    _manifest(tmp_path, [{"id": "poro", "name": "P", "file": "mods/poro.fantome"}])
-    p = _fantome(tmp_path, "mods/poro.fantome")
+def test_fantome_built_when_ready(monkeypatch, tmp_path):
+    _state(monkeypatch)
+    _catalog(monkeypatch, [_emote("a"), _emote("b")])
     em.set_emote_enabled(True)
-    em.set_active_emote("poro")
-    assert em.resolve_active_emote_fantome() == p.resolve()
+    em.set_source_emote("a")
+    em.set_target_emote("b")
+
+    import utils.core.emote_assets as assets
+    import utils.core.emote_mod as mod
+    built = tmp_path / "a__b.fantome"
+    built.write_bytes(b"FANTOME")
+    monkeypatch.setattr(assets, "is_harvested", lambda: True)
+    monkeypatch.setattr(mod, "build_emote_mod", lambda s, t: built)
+
+    assert em.resolve_active_emote_fantome() == built
 
 
-def test_resolve_missing_file_none(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    _manifest(tmp_path, [{"id": "poro", "name": "P", "file": "mods/poro.fantome"}])
+def test_resolution_never_raises(monkeypatch):
+    _state(monkeypatch)
+
+    def boom(_i):
+        raise RuntimeError("catalog exploded")
+
+    monkeypatch.setattr(em, "get_game_emote", boom)
     em.set_emote_enabled(True)
-    em.set_active_emote("poro")
+    em.set_source_emote("a")
+    em.set_target_emote("b")
+    assert em.resolve_emote_pair() is None
     assert em.resolve_active_emote_fantome() is None
-
-
-def test_resolve_unknown_active_id_none(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    _manifest(tmp_path, [{"id": "poro", "name": "P", "file": "mods/poro.fantome"}])
-    _fantome(tmp_path, "mods/poro.fantome")
-    em.set_emote_enabled(True)
-    em.set_active_emote("does-not-exist")
-    assert em.resolve_active_emote_fantome() is None
-
-
-def test_resolve_sha_mismatch_then_match(tmp_path, monkeypatch):
-    _setup(tmp_path, monkeypatch)
-    data = b"MOD"
-    good = hashlib.sha256(data).hexdigest()
-    _manifest(tmp_path, [{"id": "poro", "name": "P", "file": "mods/poro.fantome", "sha256": "deadbeef"}])
-    _fantome(tmp_path, "mods/poro.fantome", data)
-    em.set_emote_enabled(True)
-    em.set_active_emote("poro")
-    assert em.resolve_active_emote_fantome() is None
-    _manifest(tmp_path, [{"id": "poro", "name": "P", "file": "mods/poro.fantome", "sha256": good}])
-    assert em.resolve_active_emote_fantome() is not None

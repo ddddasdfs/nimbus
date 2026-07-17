@@ -15,6 +15,26 @@
   let bridge = null;
   let isInChampSelect = false;
   let favoritesMap = {}; // { "<championId>": <skinId:int> | "path:<rel>" }
+  let starElement = null;
+
+  const CSS_RULES = `
+    #${STAR_ID} {
+      position: absolute;
+      height: 30px;
+      width: 30px;
+      line-height: 30px;
+      text-align: center;
+      font-size: 24px;
+      cursor: pointer;
+      pointer-events: auto;
+      z-index: 10;
+      text-shadow: 0 0 4px rgba(0,0,0,0.9);
+      -webkit-user-select: none;
+      user-select: none;
+      transition: transform 0.1s ease;
+    }
+    #${STAR_ID}:hover { transform: scale(1.15); }
+  `;
 
   function waitForBridge() {
     return new Promise((resolve, reject) => {
@@ -45,7 +65,7 @@
     return { championId, skinId };
   }
 
-  // Is the currently-selected skin the pinned favorite for the current champion?
+  // Is the currently-centered skin the pinned favorite for the current champion?
   function isCurrentPinned() {
     const { championId, skinId } = getContext();
     if (championId === null || skinId === null) return false;
@@ -62,10 +82,26 @@
     return v !== undefined && v !== null;
   }
 
-  function findSelectedItem() {
+  // The visually-centered skin in the carousel is `.skin-carousel-offset-2`
+  // (NOT `.skin-selection-item-selected`, which stays on one tile as you scroll).
+  function findCentralItem() {
     if (!isInChampSelect) return null;
-    return document.querySelector(
-      ".skin-selection-item.skin-selection-item-selected"
+    const items = document.querySelectorAll(".skin-selection-item");
+    for (const item of items) {
+      if (item.classList.contains("skin-carousel-offset-2")) return item;
+    }
+    // Fallback: the persistent selected tile (better than nothing).
+    return document.querySelector(".skin-selection-item.skin-selection-item-selected");
+  }
+
+  function findContainer() {
+    if (!isInChampSelect) return null;
+    return (
+      document.querySelector(".skin-selection-carousel-container") ||
+      document.querySelector(".skin-selection-carousel") ||
+      (document.querySelector(".champion-select-main-container") &&
+        document.querySelector(".champion-select-main-container div.visible")) ||
+      null
     );
   }
 
@@ -76,7 +112,7 @@
   function handleFavoritesData(payload) {
     const data = payload && payload.favorites;
     favoritesMap = data && typeof data === "object" ? data : {};
-    updateStar();
+    if (starElement) renderStarState();
   }
 
   function onStarClick(ev) {
@@ -88,90 +124,67 @@
       return;
     }
     if (isCurrentPinned()) {
-      // Unpin this champion's favorite
       if (bridge) bridge.send({ type: "unpin-favorite", championId: championId, timestamp: Date.now() });
       delete favoritesMap[String(championId)]; // optimistic
       log("info", `Unpinned favorite for champion ${championId}`);
     } else {
-      // Pin the currently-selected skin/chroma id
       if (bridge) bridge.send({ type: "pin-favorite", championId: championId, value: skinId, timestamp: Date.now() });
       favoritesMap[String(championId)] = skinId; // optimistic
       log("info", `Pinned skin ${skinId} as favorite for champion ${championId}`);
     }
-    updateStar();
-    // Re-sync with Python shortly after (authoritative)
-    setTimeout(requestFavorites, 200);
+    renderStarState();
+    setTimeout(requestFavorites, 200); // re-sync with Python (authoritative)
   }
 
-  function createStar() {
-    const star = document.createElement("div");
-    star.id = STAR_ID;
-    star.setAttribute("role", "button");
-    star.setAttribute("title", "Pin this skin as your favorite for this champion");
-    Object.assign(star.style, {
-      position: "absolute",
-      left: "-14px",
-      top: "-14px",
-      height: "28px",
-      width: "28px",
-      lineHeight: "28px",
-      textAlign: "center",
-      fontSize: "22px",
-      cursor: "pointer",
-      pointerEvents: "auto",
-      zIndex: "10",
-      textShadow: "0 0 4px rgba(0,0,0,0.9)",
-      WebkitUserSelect: "none",
-      userSelect: "none",
-    });
-    star.addEventListener("click", onStarClick);
-    return star;
-  }
-
-  function renderStarState(star) {
+  function renderStarState() {
+    if (!starElement) return;
     const pinnedHere = isCurrentPinned();
-    // textContent (not innerHTML) — no injection surface
-    star.textContent = pinnedHere ? STAR_FILLED : STAR_EMPTY;
-    star.style.color = pinnedHere ? "#f0c060" : "#c8c8c8";
-    star.style.opacity = pinnedHere ? "1" : "0.75";
-    if (championHasPin() && !pinnedHere) {
-      // Champion has a pin, but it's a different skin than the one being viewed
-      star.title = "This champion has a different pinned favorite. Click to pin this skin instead.";
-    } else if (pinnedHere) {
-      star.title = "Pinned favorite. Click to unpin.";
+    starElement.textContent = pinnedHere ? STAR_FILLED : STAR_EMPTY; // textContent = no injection surface
+    starElement.style.color = pinnedHere ? "#f0c060" : "#d0d0d0";
+    starElement.style.opacity = pinnedHere ? "1" : "0.8";
+    if (pinnedHere) {
+      starElement.title = "Pinned favorite. Click to unpin.";
+    } else if (championHasPin()) {
+      starElement.title = "This champion has a different pinned favorite. Click to pin this skin instead.";
     } else {
-      star.title = "Pin this skin as your favorite for this champion";
+      starElement.title = "Pin this skin as your favorite for this champion";
     }
   }
 
   function removeStar() {
     document.getElementById(STAR_ID)?.remove();
+    starElement = null;
   }
 
-  function updateStar() {
-    if (!isInChampSelect) {
-      removeStar();
-      return;
+  // Create the star once and anchor it over the centered skin (mirrors the dice button).
+  function createStar() {
+    if (!isInChampSelect) return;
+    if (starElement && document.body.contains(starElement)) return; // already present
+
+    const central = findCentralItem();
+    const container = findContainer();
+    if (!central || !container) return; // carousel not ready yet; MutationObserver will retry
+
+    const containerStyle = window.getComputedStyle(container);
+    if (containerStyle.position === "static") {
+      container.style.position = "relative";
     }
-    const item = findSelectedItem();
-    if (!item) {
-      // Selected item not in DOM yet; the MutationObserver will re-trigger us.
-      return;
-    }
-    // Ensure the item is a positioning context for our absolute star.
-    const computed = window.getComputedStyle(item);
-    if (computed.position === "static") {
-      item.style.position = "relative";
-    }
-    let star = document.getElementById(STAR_ID);
-    if (!star) {
-      star = createStar();
-    }
-    // Move the star into the currently-selected item (selection can change).
-    if (star.parentElement !== item) {
-      item.appendChild(star);
-    }
-    renderStarState(star);
+
+    const itemRect = central.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    const star = document.createElement("div");
+    star.id = STAR_ID;
+    star.setAttribute("role", "button");
+    // Top-left corner of the centered skin tile (reward flag lives top-right, so no overlap).
+    star.style.left = `${itemRect.left - containerRect.left - 6}px`;
+    star.style.top = `${itemRect.top - containerRect.top - 6}px`;
+    star.addEventListener("click", onStarClick);
+
+    container.appendChild(star);
+    starElement = star;
+    renderStarState();
+    log("info", "Favorite star created over centered skin");
   }
 
   function handlePhaseChange(data) {
@@ -180,21 +193,30 @@
     if (isInChampSelect && !wasInChampSelect) {
       log("debug", "Entered ChampSelect - enabling favorite star");
       requestFavorites();
-      setTimeout(updateStar, 200);
+      setTimeout(createStar, 300);
     } else if (!isInChampSelect && wasInChampSelect) {
       log("debug", "Left ChampSelect - removing favorite star");
       removeStar();
     }
   }
 
+  // nimbus-SkinMonitor publishes the centered skin as the carousel scrolls.
   function handleSkinStateChange() {
-    // Current skin/champ changed - refresh the star's filled/empty state and anchor.
-    if (isInChampSelect) updateStar();
+    if (!isInChampSelect) return;
+    if (!starElement || !document.body.contains(starElement)) {
+      createStar();
+    } else {
+      renderStarState();
+    }
   }
 
   async function init() {
     log("info", "Initializing nimbus-FavoriteStar plugin");
     bridge = await waitForBridge();
+
+    const style = document.createElement("style");
+    style.textContent = CSS_RULES;
+    document.head.appendChild(style);
 
     bridge.subscribe("favorites-data", handleFavoritesData);
     bridge.subscribe("phase-change", handlePhaseChange);
@@ -205,9 +227,11 @@
     // React to skin/champion selection changes published by nimbus-SkinMonitor.
     window.addEventListener(SKIN_STATE_EVENT, handleSkinStateChange);
 
-    // The champ-select skin carousel re-renders frequently; re-attach the star on DOM changes.
+    // The carousel re-renders frequently; (re)create the star if it's missing.
     const observer = new MutationObserver(() => {
-      if (isInChampSelect) updateStar();
+      if (isInChampSelect && (!starElement || !document.body.contains(starElement))) {
+        createStar();
+      }
     });
     observer.observe(document.body, { childList: true, subtree: true });
 

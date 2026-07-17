@@ -128,3 +128,6 @@ skin-key-worker/node_modules/
 relay-worker/.wrangler/
 
 .pytest_cache/
+
+# Local planning/design docs (not part of the app)
+docs/superpowers/

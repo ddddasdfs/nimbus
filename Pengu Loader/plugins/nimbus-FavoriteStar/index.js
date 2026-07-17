@@ -17,8 +17,6 @@
   let isInChampSelect = false;
   let favoritesMap = {}; // { "<championId>": <skinId:int> | "path:<rel>" }
   let starElement = null;
-  let rollGuardChamp = null;          // champion we've already tried to auto-roll for
-  let rolling = false;                // an auto-roll sequence is in progress
   let championLocked = false;         // Python's authoritative "your champion is locked" signal
   const champDataCache = new Map();   // championId -> Map(skinId -> name)
 
@@ -165,7 +163,6 @@
     favoritesMap = data && typeof data === "object" ? data : {};
     if (starElement) renderStarState();
     updateBanner();
-    scheduleAutoRoll();
   }
 
   function onStarClick(ev) {
@@ -254,7 +251,6 @@
       log("debug", "Left ChampSelect - cleaning up");
       removeStar();
       removeBanner();
-      rollGuardChamp = null;
       championLocked = false;
     }
   }
@@ -266,12 +262,11 @@
     if (championLocked && !wasLocked) {
       log("debug", "Champion locked - enabling favorite star + banner");
       requestFavorites();
-      setTimeout(() => { createStar(); updateBanner(); scheduleAutoRoll(); }, 300);
+      setTimeout(() => { createStar(); updateBanner(); }, 300);
     } else if (!championLocked && wasLocked) {
       log("debug", "Champion unlocked - removing star + banner");
       removeStar();
       removeBanner();
-      rollGuardChamp = null;
     }
   }
 
@@ -284,7 +279,6 @@
       renderStarState();
     }
     updateBanner();
-    scheduleAutoRoll();
   }
 
   // --- Name resolution (client's local game data; same endpoint the other plugins use) ---
@@ -364,83 +358,10 @@
     });
   }
 
-  // --- Best-effort auto-roll: navigate the carousel to center the pinned skin ---
-  // Reads each tile's skin id from its thumbnail background-image URL
-  // (…/champion-tiles/<champ>/<skinId>.jpg). Works for owned skins reliably; for
-  // unowned skins it previews (the client may snap the *selection* back, but the
-  // banner remains the authoritative "you'll get this" indicator).
-  function offsetTile(off) {
-    const items = document.querySelectorAll(".skin-selection-item");
-    for (const it of items) {
-      if (it.classList.contains("skin-carousel-offset-" + off)) return it;
-    }
-    return null;
-  }
-
-  function presentOffsets() {
-    return Array.from(document.querySelectorAll(".skin-selection-item")).map((it) => {
-      const c = Array.from(it.classList).find((x) => x.startsWith("skin-carousel-offset-"));
-      return c ? c.replace("skin-carousel-offset-", "") : "?";
-    });
-  }
-
-  // Center the pinned skin by clicking the tile at the right carousel offset. Tiles are
-  // in the champion's skin order (from game data); the centered tile is offset-2, so the
-  // target sits `delta` positions away. Direction of the offset axis is unknown, so we try
-  // both. Reliable center comes from nimbus-SkinMonitor (skin-state), not tile scraping.
-  function autoRoll() {
-    if (rolling || !isInChampSelect || !championLocked) return;
-    const { championId, skinId } = getContext();
-    if (championId === null) return;
-    const pin = favoritesMap[String(championId)];
-    if (pin === undefined || pin === null || typeof pin === "string") return;
-    const target = Number(pin);
-    if (Number(skinId) === target) { log("info", "auto-roll: pinned skin already centered"); return; }
-
-    rolling = true;
-    fetchChampData(championId).then((entry) => {
-      if (!entry) { rolling = false; log("warn", "auto-roll: no champion data"); return; }
-      const ci = entry.order.indexOf(Number(skinId));
-      const ti = entry.order.indexOf(target);
-      if (ci < 0 || ti < 0) {
-        rolling = false;
-        log("warn", `auto-roll: skin not in order list (centerIdx=${ci}, targetIdx=${ti})`);
-        return;
-      }
-      const delta = ti - ci;
-      const candidates = [2 + delta, 2 - delta]; // offset axis direction unknown; try both
-      attemptOffset(target, candidates, 0);
-    });
-  }
-
-  function attemptOffset(target, candidates, idx) {
-    if (!isInChampSelect || !championLocked || idx >= candidates.length) {
-      rolling = false;
-      if (idx >= candidates.length) log("warn", "auto-roll: exhausted offset candidates");
-      return;
-    }
-    const off = candidates[idx];
-    const tile = offsetTile(off);
-    log("info", `auto-roll: want offset ${off}, present=[${presentOffsets().join(",")}], tileFound=${!!tile}`);
-    if (tile) { try { tile.click(); } catch (e) { /* ignore */ } }
-    setTimeout(() => {
-      const cur = getContext().skinId;
-      log("info", `auto-roll: after clicking offset ${off}, center=${cur} target=${target}`);
-      if (Number(cur) === target) { rolling = false; log("info", "auto-roll: centered on pinned skin"); return; }
-      attemptOffset(target, candidates, idx + 1);
-    }, 650);
-  }
-
-  // One bounded attempt per champion, after injection has settled.
-  function scheduleAutoRoll() {
-    if (!isInChampSelect || !championLocked) return;
-    const { championId } = getContext();
-    if (championId === null || rollGuardChamp === championId) return;
-    const pin = favoritesMap[String(championId)];
-    if (pin === undefined || pin === null || typeof pin === "string") return;
-    rollGuardChamp = championId;
-    setTimeout(autoRoll, 1800);
-  }
+  // NOTE: auto-roll (navigating the carousel to the pinned skin) was removed on purpose.
+  // Clicking tiles either doesn't navigate (non-adjacent tiles ignore synthetic clicks) or,
+  // when it would navigate, it reads as a manual skin change and BACKS OFF the pin — which
+  // then injects the wrong skin. The banner above is the reliable "you'll get this" signal.
 
   async function init() {
     log("info", "Initializing nimbus-FavoriteStar plugin");

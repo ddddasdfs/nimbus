@@ -420,6 +420,7 @@ class MessageHandler:
                 "threshold": threshold,
                 "monitorAutoResumeTimeout": int(monitor_auto_resume_timeout),
                 "autostart": autostart,
+                "favoritesEnabled": (get_config_option("General", "favorites_enabled", "true") or "true").strip().lower() not in ("0", "false", "no", "off"),
                 "gamePath": game_path,
                 "gamePathValid": path_valid,
                 "hasErrors": len(diagnostics_errors) > 0,
@@ -1795,8 +1796,10 @@ class MessageHandler:
             threshold = max(0.0, min(2.0, float(payload.get("threshold", 0.5))))
             monitor_auto_resume_timeout = max(1, min(180, int(payload.get("monitorAutoResumeTimeout", 60))))
             autostart = payload.get("autostart", False)
+            favorites_enabled = bool(payload.get("favoritesEnabled", True))
+            set_config_option("General", "favorites_enabled", "true" if favorites_enabled else "false")
             game_path = payload.get("gamePath", "")
-            
+
             set_config_option("General", "injection_threshold", f"{threshold:.2f}")
             log.info(f"[SkinMonitor] Injection threshold updated to {threshold:.2f}s")
             

@@ -48,6 +48,7 @@
     threshold: 0.5,
     monitorAutoResumeTimeout: 60,
     autostart: false,
+    favoritesEnabled: true,
     gamePath: "",
     gamePathValid: false,
     version: "",
@@ -945,11 +946,47 @@
     consoleMethod(`${LOG_PREFIX} ${message}`, data || "");
   }
 
+  function handleFavoritesData(payload) {
+    const list = document.getElementById("nimbus-favorites-list");
+    if (!list) return;
+    const favs = (payload && payload.favorites) || {};
+    const keys = Object.keys(favs);
+    if (keys.length === 0) {
+      list.innerHTML = "";
+      const empty = document.createElement("div");
+      empty.className = "settings-favorites-empty";
+      empty.style.opacity = "0.7";
+      empty.textContent = "No pinned skins yet.";
+      list.appendChild(empty);
+      return;
+    }
+    list.innerHTML = "";
+    keys.forEach((champId) => {
+      const val = favs[champId];
+      const row = document.createElement("div");
+      row.className = "settings-favorites-row";
+      const label = document.createElement("span");
+      const shown = typeof val === "string" && val.indexOf("path:") === 0 ? val.slice(5) : String(val);
+      label.textContent = "Champion " + champId + " → " + shown;
+      row.appendChild(label);
+      const rm = document.createElement("button");
+      rm.className = "settings-favorites-remove";
+      rm.textContent = "Remove";
+      rm.addEventListener("click", () => {
+        if (bridge) bridge.send({ type: "unpin-favorite", championId: parseInt(champId) });
+        if (bridge) bridge.send({ type: "get-favorites" });
+      });
+      row.appendChild(rm);
+      list.appendChild(row);
+    });
+  }
+
   function handleSettingsData(payload) {
     currentSettings = {
       threshold: payload.threshold || 0.5,
       monitorAutoResumeTimeout: payload.monitorAutoResumeTimeout || 60,
       autostart: payload.autostart || false,
+      favoritesEnabled: payload.favoritesEnabled !== false,
       gamePath: payload.gamePath || "",
       gamePathValid: payload.gamePathValid || false,
       version: payload.version || "",
@@ -1796,6 +1833,31 @@
     autostartSection.appendChild(autostartWrapper);
     form.appendChild(autostartSection);
 
+    // Pinned favorites section (toggle + list)
+    const favSection = document.createElement("div");
+    favSection.className = "settings-section";
+    const favLabel = document.createElement("label");
+    favLabel.className = "settings-label";
+    favLabel.textContent = "Auto-apply pinned favorites:";
+    favSection.appendChild(favLabel);
+    const favWrapper = document.createElement("div");
+    favWrapper.className = "settings-checkbox-wrapper";
+    const favCheckbox = document.createElement("input");
+    favCheckbox.type = "checkbox";
+    favCheckbox.className = "settings-checkbox";
+    favCheckbox.id = "favorites-enabled-checkbox";
+    favWrapper.appendChild(favCheckbox);
+    const favText = document.createElement("span");
+    favText.textContent = "Auto-apply my pinned skin in champ select";
+    favWrapper.appendChild(favText);
+    favSection.appendChild(favWrapper);
+    const favList = document.createElement("div");
+    favList.id = "nimbus-favorites-list";
+    favList.className = "settings-favorites-list";
+    favSection.appendChild(favList);
+    form.appendChild(favSection);
+    if (bridge) bridge.send({ type: "get-favorites" });
+
     // Game path section
     const pathSection = document.createElement("div");
     pathSection.className = "settings-section";
@@ -2401,6 +2463,11 @@
       autostartCheckbox.checked = currentSettings.autostart;
     }
 
+    const favEnabledCheckbox = document.getElementById("favorites-enabled-checkbox");
+    if (favEnabledCheckbox) {
+      favEnabledCheckbox.checked = currentSettings.favoritesEnabled !== false;
+    }
+
     if (pathInput) {
       pathInput.value = currentSettings.gamePath || "";
       // Update status based on validation result from settings data
@@ -2483,6 +2550,8 @@
       ? parseInt(timeoutSlider.value)
       : 60;
     const autostart = autostartCheckbox ? autostartCheckbox.checked : false;
+    const favEnabledCheckbox = document.getElementById("favorites-enabled-checkbox");
+    const favoritesEnabled = favEnabledCheckbox ? favEnabledCheckbox.checked : true;
     const gamePath = pathInput ? pathInput.value.trim() : "";
 
     // Clamp threshold between 0.30 and 2.0
@@ -2498,6 +2567,7 @@
       threshold: clampedThreshold,
       monitorAutoResumeTimeout: clampedTimeout,
       autostart: autostart,
+      favoritesEnabled: favoritesEnabled,
       gamePath: gamePath,
     });
 
@@ -3584,6 +3654,7 @@
       // Subscribe to all message types
       bridge.subscribe("settings-data", handleSettingsData);
       bridge.subscribe("settings-saved", handleSettingsSaved);
+      bridge.subscribe("favorites-data", handleFavoritesData);
       bridge.subscribe("diagnostics-data", handleDiagnosticsData);
       bridge.subscribe("diagnostics-cleared-category", () => requestDiagnostics());
       bridge.subscribe("diagnostics-tracker-cleared", () => requestDiagnostics());

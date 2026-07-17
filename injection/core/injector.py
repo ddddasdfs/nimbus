@@ -122,6 +122,25 @@ class SkinInjector:
         """Extract ZIP to mod directory"""
         return self.mod_manager.extract_zip_to_mod(zp)
     
+    def _append_emote_mods(self, mod_names: List[str]) -> None:
+        """Append the active custom emote's mod to the overlay list.
+
+        Emotes are account-wide, so this applies to every injection regardless of
+        champion. Best-effort by design: any failure is logged and swallowed so that
+        skin injection is never broken by an emote problem.
+        """
+        try:
+            from utils.core.emotes import resolve_active_emote_fantome
+
+            fantome = resolve_active_emote_fantome()
+            if fantome is None:
+                return
+            emote_folder = self._extract_zip_to_mod(fantome)
+            mod_names.append(emote_folder.name)
+            log.info(f"[EMOTE] Added emote mod to overlay: {emote_folder.name}")
+        except Exception as e:
+            log.debug(f"[EMOTE] Skipped emote injection (skin unaffected): {e}")
+
     def _mk_run_overlay(self, mod_names: List[str], timeout: int = 120, stop_callback=None, injection_manager=None) -> int:
         """Create and run overlay"""
         result = self.overlay_manager.mk_run_overlay(mod_names, timeout, stop_callback, injection_manager)
@@ -211,6 +230,9 @@ class SkinInjector:
                     log.info(f"[INJECT] Including {len(extra)} party/extra mod(s): {', '.join(extra)}")
             except Exception as e:
                 log.warning(f"[INJECT] Extra mods callback failed: {e}")
+
+        # Layer the active custom emote (account-wide) on top of the skin
+        self._append_emote_mods(mod_names)
 
         # Create and run overlay
         result = self._mk_run_overlay(mod_names, timeout, stop_callback, injection_manager)

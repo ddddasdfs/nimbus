@@ -18,6 +18,7 @@
   let favoritesMap = {}; // { "<championId>": <skinId:int> | "path:<rel>" }
   let starElement = null;
   let rollGuardChamp = null;          // champion we've already tried to auto-roll for
+  let rolling = false;                // an auto-roll sequence is in progress
   const champDataCache = new Map();   // championId -> Map(skinId -> name)
 
   const CSS_RULES = `
@@ -352,41 +353,84 @@
   // (…/champion-tiles/<champ>/<skinId>.jpg). Works for owned skins reliably; for
   // unowned skins it previews (the client may snap the *selection* back, but the
   // banner remains the authoritative "you'll get this" indicator).
+  // Read a tile's skin id from any image URL it carries (background-image, <img> src,
+  // or a src-like attribute on a custom element). Skin tiles use
+  // /lol-game-data/assets/v1/champion-tiles/<champ>/<skinId>.jpg.
   function getTileSkinId(item) {
+    const urls = [];
+    const push = (u) => { if (u && typeof u === "string") urls.push(u); };
     const els = [item].concat(Array.from(item.querySelectorAll("*")));
     for (const el of els) {
-      let bg = "";
-      try { bg = window.getComputedStyle(el).backgroundImage || ""; } catch (e) { bg = ""; }
-      const m = bg.match(/\/(\d{4,7})\.(?:jpg|jpeg|png|webp)/i);
-      if (m) return Number(m[1]);
+      try { push(window.getComputedStyle(el).backgroundImage); } catch (e) { /* ignore */ }
+      if (el.tagName === "IMG") push(el.getAttribute("src"));
+      if (el.getAttribute) {
+        push(el.getAttribute("src"));
+        push(el.getAttribute("image"));
+        push(el.getAttribute("data-src"));
+      }
+    }
+    for (const u of urls) {
+      const m = u.match(/champion-tiles\/\d+\/(\d{4,7})|\/(\d{4,7})\.(?:jpg|jpeg|png|webp)/i);
+      if (m) return Number(m[1] || m[2]);
     }
     return null;
   }
 
-  function centerPinnedSkin() {
-    if (!isInChampSelect) return;
+  function tileByOffset(off) {
+    const items = document.querySelectorAll(".skin-selection-item");
+    for (const it of items) {
+      if (it.classList.contains("skin-carousel-offset-" + off)) return it;
+    }
+    return null;
+  }
+
+  // Step the carousel toward the pinned skin: click the target tile directly if it's in
+  // the DOM, else advance one tile at a time. Bounded, with diagnostics. Best-effort —
+  // for unowned skins the client may reset the selection to default afterwards.
+  function autoRoll() {
+    if (rolling || !isInChampSelect) return;
     const { championId } = getContext();
     if (championId === null) return;
     const pin = favoritesMap[String(championId)];
     if (pin === undefined || pin === null || typeof pin === "string") return;
     const target = Number(pin);
 
-    const central = findCentralItem();
-    if (central && getTileSkinId(central) === target) return; // already centered
+    rolling = true;
+    let steps = 0;
+    const maxSteps = 30;
 
-    const items = document.querySelectorAll(".skin-selection-item");
-    for (const item of items) {
-      if (getTileSkinId(item) === target) {
-        try {
-          item.click();
-          log("info", `Auto-rolled carousel toward pinned skin ${target}`);
-        } catch (e) { /* ignore */ }
-        return;
+    const tick = () => {
+      if (!isInChampSelect) { rolling = false; return; }
+      const central = findCentralItem();
+      const centerId = central ? getTileSkinId(central) : null;
+      log("info", `auto-roll step ${steps}: center=${centerId} target=${target}`);
+
+      if (centerId === target) { rolling = false; log("info", "auto-roll: centered on pinned skin"); return; }
+      if (steps >= maxSteps) { rolling = false; log("warn", "auto-roll: gave up (max steps)"); return; }
+
+      // Prefer clicking the target tile directly (works if it's in the DOM at all).
+      let clicked = false;
+      const items = document.querySelectorAll(".skin-selection-item");
+      for (const it of items) {
+        if (getTileSkinId(it) === target) {
+          try { it.click(); clicked = true; } catch (e) { /* ignore */ }
+          break;
+        }
       }
-    }
+      // Otherwise advance one step by clicking the tile just right of center.
+      if (!clicked) {
+        const adv = tileByOffset(3) || tileByOffset(4);
+        if (adv) { try { adv.click(); clicked = true; } catch (e) { /* ignore */ } }
+      }
+      if (!clicked) { rolling = false; log("warn", "auto-roll: found no tile to click - stopping"); return; }
+
+      steps++;
+      setTimeout(tick, 220);
+    };
+    tick();
   }
 
-  // A couple of bounded attempts per champion, after injection has settled.
+  // One bounded attempt per champion, after injection has settled.
   function scheduleAutoRoll() {
     if (!isInChampSelect) return;
     const { championId } = getContext();
@@ -394,8 +438,7 @@
     const pin = favoritesMap[String(championId)];
     if (pin === undefined || pin === null || typeof pin === "string") return;
     rollGuardChamp = championId;
-    setTimeout(centerPinnedSkin, 1500);
-    setTimeout(centerPinnedSkin, 3200);
+    setTimeout(autoRoll, 1800);
   }
 
   async function init() {

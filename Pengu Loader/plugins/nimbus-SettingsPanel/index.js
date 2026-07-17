@@ -48,6 +48,7 @@
     threshold: 0.5,
     monitorAutoResumeTimeout: 60,
     autostart: false,
+    favoritesEnabled: true,
     gamePath: "",
     gamePathValid: false,
     version: "",
@@ -455,7 +456,93 @@
       align-items: center;
       margin-top: 8px;
     }
-    
+
+    #${FLYOUT_ID} .settings-favorites-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    #${FLYOUT_ID} .settings-favorites-empty {
+      font-size: 12px;
+      color: #7a7259;
+      line-height: 1.5;
+      padding: 6px 2px;
+    }
+    #${FLYOUT_ID} .settings-favorites-empty .fav-star {
+      color: #c89b3c;
+    }
+    #${FLYOUT_ID} .settings-favorites-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 8px;
+      background: linear-gradient(to bottom, rgba(10,20,40,0.55), rgba(1,10,19,0.6));
+      border: 1px solid rgba(120,90,40,0.5);
+      border-radius: 2px;
+    }
+    #${FLYOUT_ID} .settings-favorites-thumb {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 38px;
+      border: 1px solid #785a28;
+      border-radius: 1px;
+      background-color: #0a1428;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+    #${FLYOUT_ID} .settings-favorites-meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    #${FLYOUT_ID} .settings-favorites-skin {
+      color: #c89b3c;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: "Beaufort for LOL", serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #${FLYOUT_ID} .settings-favorites-champ {
+      color: #8a8272;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #${FLYOUT_ID} .settings-favorites-remove {
+      flex: 0 0 auto;
+      padding: 5px 12px;
+      background: #1e2328;
+      border: 1px solid #785a28;
+      border-radius: 2px;
+      color: #c8aa6e;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: "Beaufort for LOL", serif;
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+    #${FLYOUT_ID} .settings-favorites-remove:hover {
+      color: #ff6f61;
+      border-color: #c0403a;
+      background: rgba(120,30,25,0.3);
+      box-shadow: 0 0 8px rgba(192,64,58,0.35);
+    }
+    #${FLYOUT_ID} .settings-favorites-remove:active {
+      transform: translateY(1px);
+    }
+
     /* Style for the "Add custom mods" dropdown button - match League UI button styling */
     #add-custom-mods-dropdown {
       background: #1E2328 !important;
@@ -945,11 +1032,112 @@
     consoleMethod(`${LOG_PREFIX} ${message}`, data || "");
   }
 
+  // Resolve champion + skin display names from the client's local game data.
+  // One fetch per champion (cached); falls back to raw ids if unavailable.
+  const _champDataCache = new Map(); // championId(int) -> { name, skinsById: Map }
+
+  function fetchChampData(champId) {
+    if (_champDataCache.has(champId)) return Promise.resolve(_champDataCache.get(champId));
+    return fetch(`/lol-game-data/assets/v1/champions/${champId}.json`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data || !Array.isArray(data.skins)) return null;
+        const skinsById = new Map();
+        data.skins.forEach((s) => {
+          skinsById.set(Number(s.id), { name: s.name, tilePath: s.tilePath });
+          if (Array.isArray(s.chromas)) {
+            s.chromas.forEach((c) => {
+              const cname = c.name && c.name !== data.name ? c.name : `${s.name} (chroma)`;
+              skinsById.set(Number(c.id), { name: cname, tilePath: s.tilePath });
+            });
+          }
+        });
+        const entry = { name: data.name, skinsById };
+        _champDataCache.set(champId, entry);
+        return entry;
+      })
+      .catch(() => null);
+  }
+
+  function handleFavoritesData(payload) {
+    const list = document.getElementById("nimbus-favorites-list");
+    if (!list) return;
+    const favs = (payload && payload.favorites) || {};
+    const keys = Object.keys(favs);
+    list.innerHTML = "";
+    if (keys.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "settings-favorites-empty";
+      const starSpan = document.createElement("span");
+      starSpan.className = "fav-star";
+      starSpan.textContent = "★";
+      empty.append("No pinned skins yet. Click the ", starSpan, " on a skin in champ select to pin it.");
+      list.appendChild(empty);
+      return;
+    }
+    keys.forEach((champId) => {
+      const val = favs[champId];
+      const champIdNum = parseInt(champId, 10);
+      const isPath = typeof val === "string" && val.indexOf("path:") === 0;
+
+      const row = document.createElement("div");
+      row.className = "settings-favorites-row";
+
+      const thumb = document.createElement("div");
+      thumb.className = "settings-favorites-thumb";
+      if (!isPath) {
+        thumb.style.backgroundImage = `url("/lol-game-data/assets/v1/champion-tiles/${val}.jpg")`;
+      } else {
+        thumb.style.backgroundImage = `url("/lol-game-data/assets/v1/champion-icons/${champIdNum}.png")`;
+      }
+      row.appendChild(thumb);
+
+      const meta = document.createElement("div");
+      meta.className = "settings-favorites-meta";
+      const skinEl = document.createElement("div");
+      skinEl.className = "settings-favorites-skin";
+      // Immediate fallback text (replaced by real names once resolved).
+      skinEl.textContent = isPath ? "Custom mod" : "Skin " + val;
+      const champEl = document.createElement("div");
+      champEl.className = "settings-favorites-champ";
+      champEl.textContent = "Champion " + champId;
+      meta.appendChild(skinEl);
+      meta.appendChild(champEl);
+      row.appendChild(meta);
+
+      const rm = document.createElement("button");
+      rm.className = "settings-favorites-remove";
+      rm.textContent = "Remove";
+      rm.title = "Remove this pinned favorite";
+      rm.addEventListener("click", () => {
+        if (bridge) bridge.send({ type: "unpin-favorite", championId: champIdNum });
+        if (bridge) bridge.send({ type: "get-favorites" });
+      });
+      row.appendChild(rm);
+
+      list.appendChild(row);
+
+      // Resolve real names asynchronously; leave fallbacks in place on failure.
+      fetchChampData(champIdNum).then((entry) => {
+        if (!entry) return;
+        champEl.textContent = entry.name || champEl.textContent;
+        if (!isPath) {
+          const skinMeta = entry.skinsById.get(Number(val));
+          if (skinMeta && skinMeta.name) skinEl.textContent = skinMeta.name;
+          if (skinMeta && skinMeta.tilePath) {
+            thumb.style.backgroundImage = `url("${skinMeta.tilePath}")`;
+          }
+        }
+      });
+    });
+  }
+
   function handleSettingsData(payload) {
     currentSettings = {
       threshold: payload.threshold || 0.5,
       monitorAutoResumeTimeout: payload.monitorAutoResumeTimeout || 60,
       autostart: payload.autostart || false,
+      favoritesEnabled: payload.favoritesEnabled !== false,
       gamePath: payload.gamePath || "",
       gamePathValid: payload.gamePathValid || false,
       version: payload.version || "",
@@ -1796,6 +1984,31 @@
     autostartSection.appendChild(autostartWrapper);
     form.appendChild(autostartSection);
 
+    // Pinned favorites section (toggle + list)
+    const favSection = document.createElement("div");
+    favSection.className = "settings-section";
+    const favLabel = document.createElement("label");
+    favLabel.className = "settings-label";
+    favLabel.textContent = "Auto-apply pinned favorites:";
+    favSection.appendChild(favLabel);
+    const favWrapper = document.createElement("div");
+    favWrapper.className = "settings-checkbox-wrapper";
+    const favCheckbox = document.createElement("input");
+    favCheckbox.type = "checkbox";
+    favCheckbox.className = "settings-checkbox";
+    favCheckbox.id = "favorites-enabled-checkbox";
+    favWrapper.appendChild(favCheckbox);
+    const favText = document.createElement("span");
+    favText.textContent = "Auto-apply my pinned skin in champ select";
+    favWrapper.appendChild(favText);
+    favSection.appendChild(favWrapper);
+    const favList = document.createElement("div");
+    favList.id = "nimbus-favorites-list";
+    favList.className = "settings-favorites-list";
+    favSection.appendChild(favList);
+    form.appendChild(favSection);
+    if (bridge) bridge.send({ type: "get-favorites" });
+
     // Game path section
     const pathSection = document.createElement("div");
     pathSection.className = "settings-section";
@@ -2401,6 +2614,11 @@
       autostartCheckbox.checked = currentSettings.autostart;
     }
 
+    const favEnabledCheckbox = document.getElementById("favorites-enabled-checkbox");
+    if (favEnabledCheckbox) {
+      favEnabledCheckbox.checked = currentSettings.favoritesEnabled !== false;
+    }
+
     if (pathInput) {
       pathInput.value = currentSettings.gamePath || "";
       // Update status based on validation result from settings data
@@ -2483,6 +2701,8 @@
       ? parseInt(timeoutSlider.value)
       : 60;
     const autostart = autostartCheckbox ? autostartCheckbox.checked : false;
+    const favEnabledCheckbox = document.getElementById("favorites-enabled-checkbox");
+    const favoritesEnabled = favEnabledCheckbox ? favEnabledCheckbox.checked : true;
     const gamePath = pathInput ? pathInput.value.trim() : "";
 
     // Clamp threshold between 0.30 and 2.0
@@ -2498,6 +2718,7 @@
       threshold: clampedThreshold,
       monitorAutoResumeTimeout: clampedTimeout,
       autostart: autostart,
+      favoritesEnabled: favoritesEnabled,
       gamePath: gamePath,
     });
 
@@ -3584,6 +3805,7 @@
       // Subscribe to all message types
       bridge.subscribe("settings-data", handleSettingsData);
       bridge.subscribe("settings-saved", handleSettingsSaved);
+      bridge.subscribe("favorites-data", handleFavoritesData);
       bridge.subscribe("diagnostics-data", handleDiagnosticsData);
       bridge.subscribe("diagnostics-cleared-category", () => requestDiagnostics());
       bridge.subscribe("diagnostics-tracker-cleared", () => requestDiagnostics());

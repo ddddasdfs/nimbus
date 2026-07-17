@@ -197,6 +197,13 @@ class MessageHandler:
             self._handle_dismiss_custom_mod(payload)
         elif payload_type == "dismiss-historic":
             self._handle_dismiss_historic(payload)
+        # Pinned favorites messages
+        elif payload_type == "pin-favorite":
+            self._handle_pin_favorite(payload)
+        elif payload_type == "unpin-favorite":
+            self._handle_unpin_favorite(payload)
+        elif payload_type == "get-favorites":
+            self._handle_get_favorites(payload)
         # Party mode messages
         elif payload_type == "party-enable":
             self._handle_party_enable(payload)
@@ -212,6 +219,42 @@ class MessageHandler:
             # Handle skin detection message
             self._handle_skin_detection(payload)
     
+    def _handle_pin_favorite(self, payload: dict) -> None:
+        """Pin a favorite skin/chroma/custom-mod for a champion."""
+        try:
+            champ = int(payload.get("championId"))
+            value = payload.get("value")
+            if isinstance(value, str) and value.startswith("path:"):
+                rel = value[5:]
+                if not self._is_safe_relative_path(rel):
+                    self._send_response(json.dumps({"type": "favorite-pinned", "success": False, "error": "unsafe path"}))
+                    return
+            else:
+                value = int(value)
+            from utils.core.favorites import set_favorite
+            set_favorite(champ, value)
+            self._send_response(json.dumps({"type": "favorite-pinned", "success": True, "championId": champ}))
+        except Exception as e:
+            self._send_response(json.dumps({"type": "favorite-pinned", "success": False, "error": str(e)}))
+
+    def _handle_unpin_favorite(self, payload: dict) -> None:
+        """Remove a champion's pinned favorite."""
+        try:
+            champ = int(payload.get("championId"))
+            from utils.core.favorites import clear_favorite
+            clear_favorite(champ)
+            self._send_response(json.dumps({"type": "favorite-unpinned", "success": True, "championId": champ}))
+        except Exception as e:
+            self._send_response(json.dumps({"type": "favorite-unpinned", "success": False, "error": str(e)}))
+
+    def _handle_get_favorites(self, payload: dict) -> None:
+        """Return the full favorites map for the settings list."""
+        try:
+            from utils.core.favorites import load_favorites_map
+            self._send_response(json.dumps({"type": "favorites-data", "favorites": load_favorites_map()}))
+        except Exception:
+            self._send_response(json.dumps({"type": "favorites-data", "favorites": {}}))
+
     def _handle_chroma_log(self, payload: dict) -> None:
         """Handle chroma log message"""
         source = payload.get("source", "ChromaWheel")
@@ -377,6 +420,7 @@ class MessageHandler:
                 "threshold": threshold,
                 "monitorAutoResumeTimeout": int(monitor_auto_resume_timeout),
                 "autostart": autostart,
+                "favoritesEnabled": (get_config_option("General", "favorites_enabled", "true") or "true").strip().lower() not in ("0", "false", "no", "off"),
                 "gamePath": game_path,
                 "gamePathValid": path_valid,
                 "hasErrors": len(diagnostics_errors) > 0,
@@ -1752,8 +1796,10 @@ class MessageHandler:
             threshold = max(0.0, min(2.0, float(payload.get("threshold", 0.5))))
             monitor_auto_resume_timeout = max(1, min(180, int(payload.get("monitorAutoResumeTimeout", 60))))
             autostart = payload.get("autostart", False)
+            favorites_enabled = bool(payload.get("favoritesEnabled", True))
+            set_config_option("General", "favorites_enabled", "true" if favorites_enabled else "false")
             game_path = payload.get("gamePath", "")
-            
+
             set_config_option("General", "injection_threshold", f"{threshold:.2f}")
             log.info(f"[SkinMonitor] Injection threshold updated to {threshold:.2f}s")
             

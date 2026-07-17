@@ -60,6 +60,14 @@ class ChampThread(threading.Thread):
         except Exception:
             pass
 
+        # Apply pinned favorite (if any) for the newly-locked champion.
+        try:
+            from utils.core.favorites import apply_pin_to_state
+            if apply_pin_to_state(self.state, new_champ_id):
+                log.info(f"[FAVORITE] Applied pinned favorite for champion {new_champ_id}: {self.state.historic_skin_id}")
+        except Exception as e:
+            log.debug(f"[FAVORITE] Failed to apply pinned favorite on exchange: {e}")
+
         # Clear cache to detect new champion's skin
         if self.state.ui_skin_thread:
             try:

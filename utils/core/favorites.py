@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Pinned favorite skins: persist and read a per-champion favorite skin/chroma/mod.
+
+File: favorites.json, shape { "<championId>": <skinOrChromaId:int> | "path:<relPath>" }.
+Mirrors historic.py's value format so a favorite can be a skin, chroma, or custom mod.
+Separate file from historic.json so Historic Mode data is never touched.
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Dict, Optional, Union
+
+from utils.core.paths import get_user_data_dir
+
+
+def _favorites_file_path() -> Path:
+    return get_user_data_dir() / "favorites.json"
+
+
+def load_favorites_map() -> Dict[str, Union[int, str]]:
+    """Load the favorites mapping. Returns empty dict if missing or invalid."""
+    try:
+        p = _favorites_file_path()
+        if not p.exists():
+            return {}
+        with p.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {}
+        result: Dict[str, Union[int, str]] = {}
+        for k, v in data.items():
+            try:
+                key = str(int(k))
+                if isinstance(v, int):
+                    result[key] = int(v)
+                elif isinstance(v, str):
+                    result[key] = str(v)
+            except Exception:
+                continue
+        return result
+    except Exception:
+        return {}
+
+
+def get_favorite_for_champion(champion_id: int) -> Optional[Union[int, str]]:
+    """Return the favorite entry for a champion, or None."""
+    return load_favorites_map().get(str(int(champion_id)))
+
+
+def set_favorite(champion_id: int, value: Union[int, str]) -> None:
+    """Write/overwrite the favorite for a champion. Best-effort."""
+    p = _favorites_file_path()
+    m = load_favorites_map()
+    m[str(int(champion_id))] = value
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("w", encoding="utf-8") as f:
+            json.dump(m, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def clear_favorite(champion_id: int) -> None:
+    """Remove the favorite for a champion if present. Best-effort."""
+    try:
+        p = _favorites_file_path()
+        m = load_favorites_map()
+        key = str(int(champion_id))
+        if key in m:
+            m.pop(key, None)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            with p.open("w", encoding="utf-8") as f:
+                json.dump(m, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def get_active_pin(champion_id: int) -> Optional[Union[int, str]]:
+    """Return this champion's pinned favorite if auto-apply is enabled, else None.
+
+    Convenience wrapper used by the champion-lock paths so a pin can be applied the
+    moment a champion is locked, independent of the historic first-detection gate.
+    """
+    try:
+        from config import get_config_option
+        enabled = (get_config_option("General", "favorites_enabled", "true") or "true").strip().lower() \
+            not in ("0", "false", "no", "off")
+        if not enabled:
+            return None
+        return get_favorite_for_champion(champion_id)
+    except Exception:
+        return None
+
+
+def apply_pin_to_state(state, champion_id: int) -> bool:
+    """Activate this champion's pinned favorite on the shared state, if one is set.
+
+    Sets the historic-injection fields (the pin rides that path) plus the pin-specific
+    fields that let the pin win over the client's remembered skin. Returns True if a
+    pin was applied. pin_baseline_skin_id is left None here and captured on the first
+    skin detection so the pin only backs off once the user picks a different skin.
+    """
+    pin = get_active_pin(champion_id)
+    if pin is None:
+        return False
+    state.historic_mode_active = True
+    state.historic_skin_id = pin
+    state.historic_first_detection_done = True
+    state.pin_mode_active = True
+    state.pin_baseline_skin_id = None
+    return True
+
+
+def resolve_auto_apply_value(champion_id: int, favorites_enabled: bool,
+                             favorites_map: Dict[str, Union[int, str]],
+                             historic_map: Dict[str, Union[int, str]]) -> Optional[Union[int, str]]:
+    """Precedence: pinned favorite (if enabled) -> historic (last-used) -> None."""
+    key = str(int(champion_id))
+    if favorites_enabled:
+        v = favorites_map.get(key)
+        if v is not None:
+            return v
+    return historic_map.get(key)

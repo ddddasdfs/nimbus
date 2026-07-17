@@ -82,7 +82,13 @@ class SharedState:
     historic_mode_active: bool = False  # Tracks if HistoricMode is active
     historic_skin_id: Optional[int] = None  # Skin/chroma ID to use for HistoricMode
     historic_first_detection_done: bool = False  # Whether first skin detection happened for current champ
-    
+
+    # Pinned favorite override (rides on the historic injection path, but wins over the
+    # client's remembered skin). pin_baseline_skin_id is the skin shown at lock; the pin
+    # holds while the user stays on it and backs off once they pick something else.
+    pin_mode_active: bool = False
+    pin_baseline_skin_id: Optional[int] = None
+
     # Thread references for cross-thread access
     ui_skin_thread = None  # Reference to UISkinThread instance
     

@@ -294,24 +294,27 @@
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data || !Array.isArray(data.skins)) return null;
-        const m = new Map();
+        const nameById = new Map();
+        const order = []; // base skins in carousel order (chromas are sub-selections, not tiles)
         data.skins.forEach((s) => {
-          m.set(Number(s.id), s.name);
+          nameById.set(Number(s.id), s.name);
+          order.push(Number(s.id));
           if (Array.isArray(s.chromas)) {
             s.chromas.forEach((c) => {
               const nm = c.name && c.name !== data.name ? c.name : `${s.name} (chroma)`;
-              m.set(Number(c.id), nm);
+              nameById.set(Number(c.id), nm);
             });
           }
         });
-        champDataCache.set(championId, m);
-        return m;
+        const entry = { nameById, order };
+        champDataCache.set(championId, entry);
+        return entry;
       })
       .catch(() => null);
   }
 
   function fetchSkinName(championId, skinId) {
-    return fetchChampData(championId).then((m) => (m ? m.get(Number(skinId)) || null : null));
+    return fetchChampData(championId).then((e) => (e ? e.nameById.get(Number(skinId)) || null : null));
   }
 
   // --- Confirmation banner: "★ You'll get: <skin>" while a pin is active ---
@@ -366,32 +369,25 @@
   // (…/champion-tiles/<champ>/<skinId>.jpg). Works for owned skins reliably; for
   // unowned skins it previews (the client may snap the *selection* back, but the
   // banner remains the authoritative "you'll get this" indicator).
-  // Read a tile's skin id from any image URL it carries (background-image, <img> src,
-  // or a src-like attribute on a custom element). Skin tiles use
-  // /lol-game-data/assets/v1/champion-tiles/<champ>/<skinId>.jpg.
-  function getTileSkinId(item) {
-    const urls = [];
-    const push = (u) => { if (u && typeof u === "string") urls.push(u); };
-    const els = [item].concat(Array.from(item.querySelectorAll("*")));
-    for (const el of els) {
-      try { push(window.getComputedStyle(el).backgroundImage); } catch (e) { /* ignore */ }
-      if (el.tagName === "IMG") push(el.getAttribute("src"));
-      if (el.getAttribute) {
-        push(el.getAttribute("src"));
-        push(el.getAttribute("image"));
-        push(el.getAttribute("data-src"));
-      }
-    }
-    for (const u of urls) {
-      const m = u.match(/champion-tiles\/\d+\/(\d{4,7})|\/(\d{4,7})\.(?:jpg|jpeg|png|webp)/i);
-      if (m) return Number(m[1] || m[2]);
+  function offsetTile(off) {
+    const items = document.querySelectorAll(".skin-selection-item");
+    for (const it of items) {
+      if (it.classList.contains("skin-carousel-offset-" + off)) return it;
     }
     return null;
   }
 
-  // Best-effort: click the pinned skin's tile to center it. The reliable center id comes
-  // from nimbus-SkinMonitor (__nimbusSkinState.skinId); tile ids are read from images and
-  // logged so we can see whether the DOM exposes them at all. Bounded, no stepping.
+  function presentOffsets() {
+    return Array.from(document.querySelectorAll(".skin-selection-item")).map((it) => {
+      const c = Array.from(it.classList).find((x) => x.startsWith("skin-carousel-offset-"));
+      return c ? c.replace("skin-carousel-offset-", "") : "?";
+    });
+  }
+
+  // Center the pinned skin by clicking the tile at the right carousel offset. Tiles are
+  // in the champion's skin order (from game data); the centered tile is offset-2, so the
+  // target sits `delta` positions away. Direction of the offset axis is unknown, so we try
+  // both. Reliable center comes from nimbus-SkinMonitor (skin-state), not tile scraping.
   function autoRoll() {
     if (rolling || !isInChampSelect || !championLocked) return;
     const { championId, skinId } = getContext();
@@ -402,31 +398,37 @@
     if (Number(skinId) === target) { log("info", "auto-roll: pinned skin already centered"); return; }
 
     rolling = true;
-    let attempts = 0;
-    const maxAttempts = 6;
-
-    const tryOnce = () => {
-      if (!isInChampSelect || !championLocked) { rolling = false; return; }
-      const cur = getContext().skinId;
-      if (Number(cur) === target) { rolling = false; log("info", "auto-roll: centered on pinned skin"); return; }
-      if (attempts >= maxAttempts) { rolling = false; log("warn", "auto-roll: gave up"); return; }
-
-      const items = document.querySelectorAll(".skin-selection-item");
-      const readable = [];
-      let clicked = false;
-      for (const it of items) {
-        const sid = getTileSkinId(it);
-        if (sid !== null) readable.push(sid);
-        if (sid === target && !clicked) {
-          try { it.click(); clicked = true; } catch (e) { /* ignore */ }
-        }
+    fetchChampData(championId).then((entry) => {
+      if (!entry) { rolling = false; log("warn", "auto-roll: no champion data"); return; }
+      const ci = entry.order.indexOf(Number(skinId));
+      const ti = entry.order.indexOf(target);
+      if (ci < 0 || ti < 0) {
+        rolling = false;
+        log("warn", `auto-roll: skin not in order list (centerIdx=${ci}, targetIdx=${ti})`);
+        return;
       }
-      log("info", `auto-roll try ${attempts}: center=${cur} target=${target} tiles=${items.length} readableIds=[${readable.join(",")}] clicked=${clicked}`);
+      const delta = ti - ci;
+      const candidates = [2 + delta, 2 - delta]; // offset axis direction unknown; try both
+      attemptOffset(target, candidates, 0);
+    });
+  }
 
-      attempts++;
-      setTimeout(tryOnce, 500);
-    };
-    tryOnce();
+  function attemptOffset(target, candidates, idx) {
+    if (!isInChampSelect || !championLocked || idx >= candidates.length) {
+      rolling = false;
+      if (idx >= candidates.length) log("warn", "auto-roll: exhausted offset candidates");
+      return;
+    }
+    const off = candidates[idx];
+    const tile = offsetTile(off);
+    log("info", `auto-roll: want offset ${off}, present=[${presentOffsets().join(",")}], tileFound=${!!tile}`);
+    if (tile) { try { tile.click(); } catch (e) { /* ignore */ } }
+    setTimeout(() => {
+      const cur = getContext().skinId;
+      log("info", `auto-roll: after clicking offset ${off}, center=${cur} target=${target}`);
+      if (Number(cur) === target) { rolling = false; log("info", "auto-roll: centered on pinned skin"); return; }
+      attemptOffset(target, candidates, idx + 1);
+    }, 650);
   }
 
   // One bounded attempt per champion, after injection has settled.

@@ -126,7 +126,7 @@ class Broadcaster:
             from utils.core.historic import is_custom_mod_path
             if is_custom_mod_path(historic_skin_id):
                 # Custom mod popups are handled by the custom-mod-state broadcast
-                # (which goes through 2SDAY-CustomWheel's skin-matching logic).
+                # (which goes through nimbus-CustomWheel's skin-matching logic).
                 # Don't show a popup here — it would bypass the skin check.
                 skin_name = None
             else:

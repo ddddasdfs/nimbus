@@ -46,8 +46,8 @@ class UpdateDialog(Win32Window):
 
     def __init__(self) -> None:
         super().__init__(
-            class_name="TwosdayUpdateDialog",
-            window_title=f"2SDAY {APP_VERSION}",
+            class_name="NimbusUpdateDialog",
+            window_title=f"nimbus {APP_VERSION}",
             width=420,
             height=120,
             style=WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
@@ -78,7 +78,7 @@ class UpdateDialog(Win32Window):
 
         detail_hwnd = self.create_control(
             "STATIC",
-            "Preparing 2SDAY…",
+            "Preparing nimbus…",
             WS_CHILD | WS_VISIBLE,
             0,
             x_pos,
@@ -313,7 +313,7 @@ class UpdateDialog(Win32Window):
     def _render_status_text(self) -> None:
         if not self.detail_hwnd or not self.status_hwnd:
             return
-        header = self._status_text or self._current_status or "Preparing 2SDAY…"
+        header = self._status_text or self._current_status or "Preparing nimbus…"
         user32.SetWindowTextW(self.detail_hwnd, header)
         user32.InvalidateRect(self.detail_hwnd, None, True)
         user32.SetWindowTextW(self.status_hwnd, self._transfer_text or "")

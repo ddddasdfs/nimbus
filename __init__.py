@@ -1,2 +1,2 @@
-# 2SDAY - Modular Skin Injector
+# nimbus - Modular Skin Injector
 # Main package initialization

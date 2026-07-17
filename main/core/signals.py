@@ -121,7 +121,7 @@ def _start_shutdown_watcher() -> None:
 
     # -- Thread body -------------------------------------------------------------
     def _run() -> None:
-        class_name = "TwosdayShutdownWatcher"
+        class_name = "NimbusShutdownWatcher"
         h_instance = kernel32.GetModuleHandleW(None)
 
         wc = WNDCLASSEXW()
@@ -138,7 +138,7 @@ def _start_shutdown_watcher() -> None:
         hwnd = user32.CreateWindowExW(
             0,             # no extended style
             class_name,
-            "2SDAY Shutdown Watcher",
+            "nimbus Shutdown Watcher",
             0,             # no visible style flags
             0, 0, 0, 0,   # position / size irrelevant
             None,          # no parent → top-level

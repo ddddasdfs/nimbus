@@ -18,7 +18,7 @@ class ChromaPanelManager:
 
     NOTE: The legacy PyQt6 visual chroma panel has been removed.
     This manager now only tracks chroma state for the JavaScript plugins
-    (2SDAY-ChromaWheel, 2SDAY-RandomSkin, 2SDAY-HistoricMode, etc.) and no longer
+    (nimbus-ChromaWheel, nimbus-RandomSkin, nimbus-HistoricMode, etc.) and no longer
     creates or shows any Qt widgets.
     """
     

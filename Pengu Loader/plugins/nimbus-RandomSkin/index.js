@@ -1,17 +1,17 @@
 /**
- * @name 2SDAY-RandomSkin
- * @author 2SDAY Team
+ * @name nimbus-RandomSkin
+ * @author nimbus Team
  * @description Random skin for Pengu Loader
- * @link https://github.com/ddddasdfs/2SDAY
+ * @link https://github.com/ddddasdfs/Nimbus
  */
 (function initRandomSkin() {
-  const LOG_PREFIX = "[2SDAY-RandomSkin]";
+  const LOG_PREFIX = "[nimbus-RandomSkin]";
   const REWARDS_SELECTOR = ".skin-selection-item-information.loyalty-reward-icon--rewards";
   const RANDOM_FLAG_ASSET_PATH = "random_flag.png";
   const DICE_DISABLED_ASSET_PATH = "dice-disabled.png";
   const DICE_ENABLED_ASSET_PATH = "dice-enabled.png";
 
-  // Shared bridge (provided by 2SDAY-SkinMonitor)
+  // Shared bridge (provided by nimbus-SkinMonitor)
   let bridge = null;
 
   function waitForBridge() {
@@ -20,7 +20,7 @@
       const interval = 50;
       let elapsed = 0;
       const check = () => {
-        if (window.__twosdayBridge) return resolve(window.__twosdayBridge);
+        if (window.__nimbusBridge) return resolve(window.__nimbusBridge);
         elapsed += interval;
         if (elapsed >= timeout) return reject(new Error("Bridge not available"));
         setTimeout(check, interval);

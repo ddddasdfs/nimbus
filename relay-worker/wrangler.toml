@@ -1,4 +1,4 @@
-name = "2sday-party-relay"
+name = "nimbus-party-relay"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 

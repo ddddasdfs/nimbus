@@ -1,16 +1,16 @@
 /**
- * @name 2SDAY-HistoricMode
- * @author 2SDAY Team
+ * @name nimbus-HistoricMode
+ * @author nimbus Team
  * @description Historic mode for Pengu Loader
- * @link https://github.com/ddddasdfs/2SDAY
+ * @link https://github.com/ddddasdfs/Nimbus
  */
 (function initHistoricMode() {
-  const LOG_PREFIX = "[2SDAY-HistoricMode]";
+  const LOG_PREFIX = "[nimbus-HistoricMode]";
   const REWARDS_SELECTOR =
     ".skin-selection-item-information.loyalty-reward-icon--rewards";
   const HISTORIC_FLAG_ASSET_PATH = "historic_flag.png";
   const SHOW_SKIN_NAME_ID = "historic-popup-layer";
-  // Shared bridge (provided by 2SDAY-SkinMonitor)
+  // Shared bridge (provided by nimbus-SkinMonitor)
   let bridge = null;
 
   function waitForBridge() {
@@ -19,7 +19,7 @@
       const interval = 50;
       let elapsed = 0;
       const check = () => {
-        if (window.__twosdayBridge) return resolve(window.__twosdayBridge);
+        if (window.__nimbusBridge) return resolve(window.__nimbusBridge);
         elapsed += interval;
         if (elapsed >= timeout) return reject(new Error("Bridge not available"));
         setTimeout(check, interval);
@@ -210,7 +210,7 @@
 
   // Inject CSS styles for lol-uikit-dialog-frame
   function injectDialogFrameStyles() {
-    const styleId = "twosday-historic-mode-dialog-frame-styles";
+    const styleId = "nimbus-historic-mode-dialog-frame-styles";
     if (document.getElementById(styleId)) {
       return; // Styles already injected
     }
@@ -859,7 +859,7 @@
   function handleCustomModStateUpdate(data) {
     if (data.active && data.modName) {
       // Only show popup if the user is currently viewing the mod's target skin
-      const currentSkinId = Number((window.__twosdaySkinState || {}).skinId);
+      const currentSkinId = Number((window.__nimbusSkinState || {}).skinId);
       const modSkinId = data.skinId ? Number(data.skinId) : null;
       if (modSkinId && currentSkinId && modSkinId !== currentSkinId) {
         // User already navigated away — don't show popup

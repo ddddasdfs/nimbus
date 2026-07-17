@@ -5,7 +5,7 @@ Helper utilities for interacting with Pengu Loader's command-line interface.
 
 The Pengu Loader CLI is used to force activate/deactivate mods and optionally
 restart the League client when required. This module provides a small wrapper
-around the executable bundled alongside 2SDAY.
+around the executable bundled alongside nimbus.
 """
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ def _sanitize_plugin_entrypoints(pengu_dir: Path) -> None:
 
     Background:
     - Disabling a plugin renames `index.js` -> `index.js_`
-    - In frozen builds, 2SDAY overlays the bundled `Pengu Loader` onto the runtime directory.
+    - In frozen builds, nimbus overlays the bundled `Pengu Loader` onto the runtime directory.
       `copytree(..., dirs_exist_ok=True)` does not delete extra files, so a disabled plugin
       can end up with BOTH `index.js_` and a freshly-copied `index.js`, effectively re-enabling
       (or duplicating) the plugin on next launch.
@@ -126,7 +126,7 @@ def _sanitize_plugin_entrypoints(pengu_dir: Path) -> None:
                             exc,
                         )
     except Exception as exc:
-        # Non-fatal: never block 2SDAY launch for a best-effort cleanup.
+        # Non-fatal: never block nimbus launch for a best-effort cleanup.
         log.debug("Failed to sanitize plugin entrypoints: %s", exc)
 
 
@@ -269,7 +269,7 @@ def _resolve_pengu_dir() -> Path:
         # Keep the runtime directory and overlay updates on top of it.
         #
         # IMPORTANT: users can add custom plugins under:
-        #   %LOCALAPPDATA%\2SDAY\Pengu Loader\plugins
+        #   %LOCALAPPDATA%\nimbus\Pengu Loader\plugins
         # Deleting the runtime directory on each launch wipes those user-installed plugins.
         runtime_dir.mkdir(parents=True, exist_ok=True)
 
@@ -482,7 +482,7 @@ def cleanup_if_dirty() -> bool:
 
 def activate_on_start(league_path: Optional[str] = None) -> bool:
     """
-    Force activate Pengu Loader when 2SDAY launches.
+    Force activate Pengu Loader when nimbus launches.
     
     Args:
         league_path: Optional League path to set before activation
@@ -517,7 +517,7 @@ def activate_on_start(league_path: Optional[str] = None) -> bool:
 
 def deactivate_on_exit() -> bool:
     """
-    Force deactivate Pengu Loader when 2SDAY shuts down.
+    Force deactivate Pengu Loader when nimbus shuts down.
 
     Returns True if the deactivation command completed successfully.
     """

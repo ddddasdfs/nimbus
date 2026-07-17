@@ -1,15 +1,15 @@
-; 2SDAY Installer Script for Inno Setup
+; nimbus Installer Script for Inno Setup
 ; This creates a proper Windows installer that registers the app
 
-#define MyAppName "2SDAY"
+#define MyAppName "nimbus"
 #define MyAppVersion "1.2.10"
 #define MyAppVersionInfo "1.2.10.0"
-#define MyAppPublisher "2SDAY Team"
-#define MyAppURL "https://github.com/ddddasdfs/2SDAY"
-#define MyAppExeName "2SDAY.exe"
+#define MyAppPublisher "nimbus Team"
+#define MyAppURL "https://github.com/ddddasdfs/Nimbus"
+#define MyAppExeName "nimbus.exe"
 #define MyAppDescription "Effortless skin changer for League of Legends"
 ; Must match config.SINGLE_INSTANCE_MUTEX_NAME (used by the app to enforce single-instance)
-#define MyAppMutex "Local\2SDAYSingleInstance"
+#define MyAppMutex "Local\nimbusSingleInstance"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -26,7 +26,7 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputDir=installer
-OutputBaseFilename=2SDAY_Setup
+OutputBaseFilename=nimbus_Setup
 SetupIconFile=assets\icon.ico
 Compression=lzma
 SolidCompression=yes
@@ -40,7 +40,7 @@ VersionInfoVersion={#MyAppVersionInfo}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppDescription}
 VersionInfoProductName={#MyAppName}
-; Prevent install/uninstall while 2SDAY is running (mutex is created by the running app)
+; Prevent install/uninstall while nimbus is running (mutex is created by the running app)
 AppMutex={#MyAppMutex}
 
 [Languages]
@@ -52,7 +52,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 
 [Files]
 ; Main application files
-Source: "dist\2SDAY\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\nimbus\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -66,17 +66,17 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 
 [UninstallRun]
 ; Uninstall Pengu Loader (removes d3d9.dll hook from the League directory)
-Filename: "{localappdata}\2SDAY\Pengu Loader\Pengu Loader.exe"; Parameters: "--uninstall --silent"; Flags: runhidden waituntilterminated skipifdoesntexist
-; Always remove the 2SDAY auto-start scheduled task (created via schtasks /TN "2SDAY")
-Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN 2SDAY /F"; Flags: runhidden
+Filename: "{localappdata}\nimbus\Pengu Loader\Pengu Loader.exe"; Parameters: "--uninstall --silent"; Flags: runhidden waituntilterminated skipifdoesntexist
+; Always remove the nimbus auto-start scheduled task (created via schtasks /TN "nimbus")
+Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN nimbus /F"; Flags: runhidden
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\_internal"
 Type: filesandordirs; Name: "{app}\injection\overlay"
 Type: filesandordirs; Name: "{app}\injection\mods"
 ; Remove user data stored in AppData
-; 2SDAY stores user data in %LOCALAPPDATA%\2SDAY
-Type: filesandordirs; Name: "{localappdata}\2SDAY"
+; nimbus stores user data in %LOCALAPPDATA%\nimbus
+Type: filesandordirs; Name: "{localappdata}\nimbus"
 ; Note: State files are now stored in user data directory, not in app directory
 
 [Code]
@@ -104,13 +104,13 @@ end;
 
 function InitializeUninstall(): Boolean;
 var
-  2SDAYRunning: Boolean;
+  nimbusRunning: Boolean;
   LeagueRunning: Boolean;
 begin
-  2SDAYRunning := CheckForMutexes('{#MyAppMutex}');
+  nimbusRunning := CheckForMutexes('{#MyAppMutex}');
   LeagueRunning := _IsLeagueRunning();
 
-  if 2SDAYRunning and LeagueRunning then
+  if nimbusRunning and LeagueRunning then
   begin
     MsgBox(
       '{#MyAppName} and League of Legends are both currently running.'#13#10 +
@@ -122,7 +122,7 @@ begin
     exit;
   end;
 
-  if 2SDAYRunning then
+  if nimbusRunning then
   begin
     MsgBox(
       '{#MyAppName} is currently running.'#13#10 +
@@ -190,7 +190,7 @@ begin
       { Remove legacy/broken startup entries that invoke rundll32 on Pengu Loader core.dll.
         This is what produces the RunDLL "module not found" dialog after uninstall. }
       if (_ContainsTextLower(ValLower, 'rundll32') and _ContainsTextLower(ValLower, 'pengu loader\core.dll')) or
-         _ContainsTextLower(ValLower, '\2sday\_internal\pengu loader\core.dll') then
+         _ContainsTextLower(ValLower, '\nimbus\_internal\pengu loader\core.dll') then
       begin
         RegDeleteValue(RootKey, SubKey, Names[I]);
       end;
@@ -219,10 +219,10 @@ begin
   _DeleteStartupValuesIfMatch(HKLM, RunOnce6432);
 end;
 
-procedure _DeleteLocalAppData2SDAY();
+procedure _DeleteLocalAppDatanimbus();
 begin
   { Ensure user data is removed before running external cleanup }
-  DelTree(ExpandConstant('{localappdata}\2SDAY'), True, True, True);
+  DelTree(ExpandConstant('{localappdata}\nimbus'), True, True, True);
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
@@ -234,8 +234,8 @@ begin
 
   if CurUninstallStep = usPostUninstall then
   begin
-    _DeleteLocalAppData2SDAY();
-    { Remove the entire install directory (Program Files\2SDAY) in case
+    _DeleteLocalAppDatanimbus();
+    { Remove the entire install directory (Program Files\nimbus) in case
       runtime-generated files (logs, caches, etc.) were left behind. }
     DelTree(ExpandConstant('{app}'), True, True, True);
   end;

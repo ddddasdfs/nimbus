@@ -289,10 +289,8 @@
       .then((data) => {
         if (!data || !Array.isArray(data.skins)) return null;
         const nameById = new Map();
-        const order = []; // base skins in carousel order (chromas are sub-selections, not tiles)
         data.skins.forEach((s) => {
           nameById.set(Number(s.id), s.name);
-          order.push(Number(s.id));
           if (Array.isArray(s.chromas)) {
             s.chromas.forEach((c) => {
               const nm = c.name && c.name !== data.name ? c.name : `${s.name} (chroma)`;
@@ -300,7 +298,7 @@
             });
           }
         });
-        const entry = { nameById, order };
+        const entry = { nameById };
         champDataCache.set(championId, entry);
         return entry;
       })

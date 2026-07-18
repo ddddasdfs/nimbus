@@ -69,6 +69,22 @@ class SkinNameResolver:
         else:
             self._no_skin_id_suppressed += 1
     
+    def _maybe_random_chroma(self, skin_or_chroma_id) -> Optional[int]:
+        """Chroma-dice roll: random chroma id when armed, else None. Never raises."""
+        try:
+            if not getattr(self.state, 'chroma_random_armed', False):
+                return None
+            import utils.core.chroma_random as chroma_random
+            chroma_id_map = self.skin_scraper.cache.chroma_id_map \
+                if self.skin_scraper and self.skin_scraper.cache else None
+            rolled = chroma_random.pick_random_chroma(skin_or_chroma_id, chroma_id_map)
+            if rolled is not None:
+                log.info(f"[CHROMA-DICE] Rolled random chroma {rolled} for skin {skin_or_chroma_id}")
+            return rolled
+        except Exception as e:
+            log.debug(f"[CHROMA-DICE] Roll skipped (skin unaffected): {e}")
+            return None
+
     def resolve_injection_name(self) -> Optional[str]:
         """Resolve injection name based on current state
         
@@ -120,6 +136,9 @@ class SkinNameResolver:
                     else:
                         name = f"skin_{hist_id}"
                         log.info(f"[HISTORIC] Using historic skin ID for injection: {hist_id}")
+                    rolled = self._maybe_random_chroma(hist_id)
+                    if rolled is not None:
+                        name = f"chroma_{rolled}"
                     return name
                 except (ValueError, TypeError):
                     log.warning(f"[HISTORIC] Invalid historic value: {hist_value}")
@@ -137,6 +156,9 @@ class SkinNameResolver:
                 else:
                     name = f"skin_{random_skin_id}"
                     log.info(f"[RANDOM] Injecting random skin: {random_skin_name} (ID: {random_skin_id})")
+                rolled = self._maybe_random_chroma(random_skin_id)
+                if rolled is not None:
+                    name = f"chroma_{rolled}"
                 return name
             else:
                 log.error(f"[RANDOM] No random skin ID available for injection")
@@ -154,6 +176,9 @@ class SkinNameResolver:
             else:
                 name = f"chroma_{skin_id}"
                 log.debug(f"[INJECT] Using chroma ID from state: '{name}' (chroma: {skin_id})")
+            rolled = self._maybe_random_chroma(skin_id)
+            if rolled is not None:
+                name = f"chroma_{rolled}"
             return name
         else:
             self._log_no_skin_id_available()

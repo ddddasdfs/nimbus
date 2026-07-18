@@ -204,6 +204,11 @@ class MessageHandler:
             self._handle_unpin_favorite(payload)
         elif payload_type == "get-favorites":
             self._handle_get_favorites(payload)
+        # Chroma dice messages
+        elif payload_type == "chroma-dice-click":
+            self._handle_chroma_dice_click(payload)
+        elif payload_type == "get-chroma-random-state":
+            self._handle_get_chroma_random_state(payload)
         # Party mode messages
         elif payload_type == "party-enable":
             self._handle_party_enable(payload)
@@ -246,6 +251,23 @@ class MessageHandler:
             self._send_response(json.dumps({"type": "favorite-unpinned", "success": True, "championId": champ}))
         except Exception as e:
             self._send_response(json.dumps({"type": "favorite-unpinned", "success": False, "error": str(e)}))
+
+    def _chroma_random_payload(self) -> str:
+        armed = bool(getattr(self.shared_state, "chroma_random_armed", False))
+        return json.dumps({"type": "chroma-random-state", "armed": armed})
+
+    def _handle_chroma_dice_click(self, payload: dict) -> None:
+        """Toggle the chroma dice (random chroma of the final applied skin)."""
+        try:
+            current = bool(getattr(self.shared_state, "chroma_random_armed", False))
+            self.shared_state.chroma_random_armed = not current
+            log.info(f"[CHROMA-DICE] Armed: {self.shared_state.chroma_random_armed}")
+        except Exception as e:
+            log.warning(f"[CHROMA-DICE] Toggle failed: {e}")
+        self._send_response(self._chroma_random_payload())
+
+    def _handle_get_chroma_random_state(self, payload: dict) -> None:
+        self._send_response(self._chroma_random_payload())
 
     def _handle_get_favorites(self, payload: dict) -> None:
         """Return the full favorites map for the settings list."""

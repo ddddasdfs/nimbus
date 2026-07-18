@@ -175,6 +175,9 @@ class WebSocketEventHandler:
         self.state.historic_skin_id = None
         self.state.historic_first_detection_done = False
 
+        # Reset chroma dice (armed is per-game)
+        self.state.chroma_random_armed = False
+
         # Clear custom mod selection from previous game so the mod-name popup
         # doesn't re-appear until the user (or historic auto-select) picks it.
         self.state.selected_custom_mod = None

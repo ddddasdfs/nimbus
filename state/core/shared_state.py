@@ -89,6 +89,10 @@ class SharedState:
     pin_mode_active: bool = False
     pin_baseline_skin_id: Optional[int] = None
 
+    # Chroma dice: when armed, the final applied skin injects as a random chroma.
+    # Reset on champ-select entry (websocket_event_handler state reset block).
+    chroma_random_armed: bool = False
+
     # Thread references for cross-thread access
     ui_skin_thread = None  # Reference to UISkinThread instance
     

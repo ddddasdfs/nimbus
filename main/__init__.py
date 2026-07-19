@@ -68,152 +68,95 @@ def _dll_status(tools_dir) -> str:
     return "ok" if _check_dll_hash(dll_path) else "invalid"
 
 
-def _show_dll_invalid_dialog(tools_dir) -> bool:
-    """Show a warning that the DLL file is invalid/untrusted."""
-    import ctypes
-    import subprocess
+def _show_dll_dialog(tools_dir, status: str) -> str:
+    """Show the DLL onboarding dialog. Returns 'open_folder' | 'continue' | 'cancel'.
 
-    ctypes.windll.user32.MessageBoxW(
-        0,
-        "The cslol-dll.dll file you provided is not recognized.\n\n"
-        "It may be corrupted, outdated, or from an untrusted source.\n"
-        "Using an unverified DLL can compromise your system.\n\n"
-        "Please replace it with the correct file.\n\n"
-        "This file is NOT available on our Discord. Do not ask for it there.\n"
-        "Asking for or sharing this file will result in a permanent ban.",
-        "nimbus - Invalid DLL",
-        0x40010  # MB_OK | MB_ICONERROR | MB_SETFOREGROUND
-    )
-    try:
-        subprocess.run(["explorer", str(tools_dir)], check=False)
-    except Exception:
-        pass
-    return False
-
-
-def _check_dll_present() -> bool:
+    status: 'missing' (no file yet) or 'invalid' (present but wrong hash).
+    Native TaskDialog with a MessageBox fallback. Distributes nothing; preserves the
+    DMCA + Discord warnings.
     """
-    Check if cslol-dll.dll is present and valid. If not, show a warning dialog and exit.
-    Returns True if DLL is present and hash-verified, False otherwise.
-    """
-    if sys.platform != "win32":
-        return True  # Only relevant on Windows
-
-    tools_dir = _get_tools_dir()
-    dll_path = tools_dir / "cslol-dll.dll"
-
-    if dll_path.exists():
-        if _check_dll_hash(dll_path):
-            return True
-        # DLL exists but wrong hash — show specific warning
-        return _show_dll_invalid_dialog(tools_dir)
-
-    # DLL missing
-
-    # DLL is missing - show native Windows TaskDialog with clickable link
     import ctypes
     from ctypes import wintypes
-    import subprocess
     import webbrowser
 
-    # Ensure tools directory exists for the user to place the DLL
-    tools_dir.mkdir(parents=True, exist_ok=True)
-
-    # Initialize common controls (required for TaskDialog)
-    class INITCOMMONCONTROLSEX(ctypes.Structure):
-        _fields_ = [
-            ("dwSize", ctypes.c_uint),
-            ("dwICC", ctypes.c_uint),
-        ]
-
-    ICC_WIN95_CLASSES = 0x000000FF
-    icc = INITCOMMONCONTROLSEX()
-    icc.dwSize = ctypes.sizeof(INITCOMMONCONTROLSEX)
-    icc.dwICC = ICC_WIN95_CLASSES
-    ctypes.windll.comctl32.InitCommonControlsEx(ctypes.byref(icc))
-
-    # TaskDialog button IDs
+    # Button ids
     IDCANCEL = 2
     ID_OPEN_FOLDER = 1000
+    ID_CONTINUE = 1001
 
-    # TaskDialog flags
+    # TaskDialog flags / notifications
     TDF_ENABLE_HYPERLINKS = 0x0001
     TDF_ALLOW_DIALOG_CANCELLATION = 0x0008
-
-    # TaskDialog icons - use TD_WARNING_ICON properly
-    TD_WARNING_ICON = 0xFFFF  # -1 as unsigned
-
-    # Callback for hyperlink clicks
+    TD_WARNING_ICON = 0xFFFF
     TDN_HYPERLINK_CLICKED = 3
 
-    # Store callback reference to prevent garbage collection
-    callback_ref = None
+    # Init common controls (required for TaskDialog)
+    class INITCOMMONCONTROLSEX(ctypes.Structure):
+        _fields_ = [("dwSize", ctypes.c_uint), ("dwICC", ctypes.c_uint)]
 
-    def make_callback():
-        @ctypes.WINFUNCTYPE(ctypes.c_long, wintypes.HWND, ctypes.c_uint, wintypes.WPARAM, wintypes.LPARAM, ctypes.c_long)
-        def task_dialog_callback(hwnd, msg, wparam, lparam, refdata):
-            if msg == TDN_HYPERLINK_CLICKED:
-                try:
-                    url = ctypes.wstring_at(lparam)
-                    webbrowser.open(url)
-                except Exception:
-                    pass
-            return 0
-        return task_dialog_callback
+    icc = INITCOMMONCONTROLSEX()
+    icc.dwSize = ctypes.sizeof(INITCOMMONCONTROLSEX)
+    icc.dwICC = 0x000000FF  # ICC_WIN95_CLASSES
+    ctypes.windll.comctl32.InitCommonControlsEx(ctypes.byref(icc))
 
-    callback_ref = make_callback()
+    if status == "invalid":
+        main_instruction = "DLL not recognized"
+        content_text = (
+            "The cslol-dll.dll you placed isn't the recognized build.\n\n"
+            "It may be corrupted, outdated, or from an untrusted source. Replace it "
+            "with the correct signed file, then click Continue.\n\n"
+            "This file is NOT available on our Discord. Do not ask for it there.\n"
+            "Asking for or sharing this file will result in a permanent ban.\n\n"
+            "<a href=\"https://github.com/ddddasdfs/Nimbus\">https://github.com/ddddasdfs/Nimbus</a>"
+        )
+    else:  # missing
+        main_instruction = "DLL file required"
+        content_text = (
+            "Due to DMCA restrictions, nimbus cannot distribute the cslol-dll.dll file.\n\n"
+            "You must provide your own signed cslol-dll.dll file. Click Open Folder, "
+            "place the file inside, then click Continue - no restart needed.\n\n"
+            "This file is NOT available on our Discord. Do not ask for it there.\n"
+            "Asking for or sharing this file will result in a permanent ban.\n\n"
+            "<a href=\"https://github.com/ddddasdfs/Nimbus\">https://github.com/ddddasdfs/Nimbus</a>"
+        )
 
-    # TASKDIALOG_BUTTON structure
+    # Hyperlink callback (kept referenced to avoid GC)
+    @ctypes.WINFUNCTYPE(ctypes.c_long, wintypes.HWND, ctypes.c_uint, wintypes.WPARAM, wintypes.LPARAM, ctypes.c_long)
+    def _cb(hwnd, msg, wparam, lparam, refdata):
+        if msg == TDN_HYPERLINK_CLICKED:
+            try:
+                webbrowser.open(ctypes.wstring_at(lparam))
+            except Exception:
+                pass
+        return 0
+
     class TASKDIALOG_BUTTON(ctypes.Structure):
-        _fields_ = [
-            ("nButtonID", ctypes.c_int),
-            ("pszButtonText", wintypes.LPCWSTR),
-        ]
+        _fields_ = [("nButtonID", ctypes.c_int), ("pszButtonText", wintypes.LPCWSTR)]
 
-    # TASKDIALOGCONFIG structure
     class TASKDIALOGCONFIG(ctypes.Structure):
         _fields_ = [
-            ("cbSize", ctypes.c_uint),
-            ("hwndParent", wintypes.HWND),
-            ("hInstance", wintypes.HINSTANCE),
-            ("dwFlags", ctypes.c_uint),
-            ("dwCommonButtons", ctypes.c_uint),
-            ("pszWindowTitle", wintypes.LPCWSTR),
-            ("pszMainIcon", wintypes.LPCWSTR),
-            ("pszMainInstruction", wintypes.LPCWSTR),
-            ("pszContent", wintypes.LPCWSTR),
-            ("cButtons", ctypes.c_uint),
-            ("pButtons", ctypes.POINTER(TASKDIALOG_BUTTON)),
-            ("nDefaultButton", ctypes.c_int),
-            ("cRadioButtons", ctypes.c_uint),
-            ("pRadioButtons", ctypes.c_void_p),
-            ("nDefaultRadioButton", ctypes.c_int),
-            ("pszVerificationText", wintypes.LPCWSTR),
-            ("pszExpandedInformation", wintypes.LPCWSTR),
-            ("pszExpandedControlText", wintypes.LPCWSTR),
-            ("pszCollapsedControlText", wintypes.LPCWSTR),
-            ("pszFooterIcon", wintypes.LPCWSTR),
-            ("pszFooter", wintypes.LPCWSTR),
-            ("pfCallback", ctypes.c_void_p),
-            ("lpCallbackData", ctypes.c_void_p),
-            ("cxWidth", ctypes.c_uint),
+            ("cbSize", ctypes.c_uint), ("hwndParent", wintypes.HWND),
+            ("hInstance", wintypes.HINSTANCE), ("dwFlags", ctypes.c_uint),
+            ("dwCommonButtons", ctypes.c_uint), ("pszWindowTitle", wintypes.LPCWSTR),
+            ("pszMainIcon", wintypes.LPCWSTR), ("pszMainInstruction", wintypes.LPCWSTR),
+            ("pszContent", wintypes.LPCWSTR), ("cButtons", ctypes.c_uint),
+            ("pButtons", ctypes.POINTER(TASKDIALOG_BUTTON)), ("nDefaultButton", ctypes.c_int),
+            ("cRadioButtons", ctypes.c_uint), ("pRadioButtons", ctypes.c_void_p),
+            ("nDefaultRadioButton", ctypes.c_int), ("pszVerificationText", wintypes.LPCWSTR),
+            ("pszExpandedInformation", wintypes.LPCWSTR), ("pszExpandedControlText", wintypes.LPCWSTR),
+            ("pszCollapsedControlText", wintypes.LPCWSTR), ("pszFooterIcon", wintypes.LPCWSTR),
+            ("pszFooter", wintypes.LPCWSTR), ("pfCallback", ctypes.c_void_p),
+            ("lpCallbackData", ctypes.c_void_p), ("cxWidth", ctypes.c_uint),
         ]
 
-    # Create buttons array
-    buttons = (TASKDIALOG_BUTTON * 2)()
+    buttons = (TASKDIALOG_BUTTON * 3)()
     buttons[0].nButtonID = ID_OPEN_FOLDER
     buttons[0].pszButtonText = "Open Folder"
-    buttons[1].nButtonID = IDCANCEL
-    buttons[1].pszButtonText = "Cancel"
+    buttons[1].nButtonID = ID_CONTINUE
+    buttons[1].pszButtonText = "Continue"
+    buttons[2].nButtonID = IDCANCEL
+    buttons[2].pszButtonText = "Cancel"
 
-    content_text = (
-        "Due to DMCA restrictions, nimbus cannot distribute the cslol-dll.dll file.\n\n"
-        "You must provide your own signed cslol-dll.dll file.\n\n"
-        "See the project README for how to obtain and sign this file yourself.\n\n"
-        "<a href=\"https://github.com/ddddasdfs/Nimbus\">https://github.com/ddddasdfs/Nimbus</a>"
-    )
-
-    # Configure dialog
     config = TASKDIALOGCONFIG()
     config.cbSize = ctypes.sizeof(TASKDIALOGCONFIG)
     config.hwndParent = None
@@ -222,52 +165,69 @@ def _check_dll_present() -> bool:
     config.dwCommonButtons = 0
     config.pszWindowTitle = "nimbus - DLL Required"
     config.pszMainIcon = ctypes.cast(TD_WARNING_ICON, wintypes.LPCWSTR)
-    config.pszMainInstruction = "DLL file required"
+    config.pszMainInstruction = main_instruction
     config.pszContent = content_text
-    config.cButtons = 2
+    config.cButtons = 3
     config.pButtons = ctypes.cast(buttons, ctypes.POINTER(TASKDIALOG_BUTTON))
-    config.nDefaultButton = ID_OPEN_FOLDER
-    config.pfCallback = ctypes.cast(callback_ref, ctypes.c_void_p)
+    config.nDefaultButton = ID_OPEN_FOLDER if status == "missing" else ID_CONTINUE
+    config.pfCallback = ctypes.cast(_cb, ctypes.c_void_p)
     config.lpCallbackData = 0
     config.cxWidth = 0
 
-    # Show dialog
-    button_pressed = ctypes.c_int(0)
+    pressed = ctypes.c_int(0)
     hr = ctypes.windll.comctl32.TaskDialogIndirect(
-        ctypes.byref(config),
-        ctypes.byref(button_pressed),
-        None,
-        None
+        ctypes.byref(config), ctypes.byref(pressed), None, None
     )
 
-    # Check if TaskDialog failed
     if hr != 0:
-        # Fallback to simple MessageBox
+        # Fallback: MessageBox (no Continue button available -> OK maps to open_folder,
+        # so the user can still place the file; the loop re-checks on the next pass).
+        fallback_text = content_text.replace(
+            '<a href="https://github.com/ddddasdfs/Nimbus">https://github.com/ddddasdfs/Nimbus</a>',
+            "",
+        ) + "\nClick OK to open the folder; nimbus re-checks automatically - no restart needed."
         result = ctypes.windll.user32.MessageBoxW(
             0,
-            "Due to DMCA restrictions, nimbus cannot distribute the cslol-dll.dll file.\n\n"
-            "You must provide your own signed cslol-dll.dll file.\n\n"
-            "This file is NOT available on our Discord. Do not ask for it there.\n"
-            "Asking for or sharing this file will result in a permanent ban.\n\n"
-            "Click OK to open the folder where you should place the DLL.",
+            fallback_text,
             "nimbus - DLL Required",
-            0x40031  # MB_OKCANCEL | MB_ICONWARNING | MB_SETFOREGROUND
+            0x40031,  # MB_OKCANCEL | MB_ICONWARNING | MB_SETFOREGROUND
         )
-        if result == 1:  # IDOK
+        return "open_folder" if result == 1 else "cancel"
+
+    if pressed.value == ID_OPEN_FOLDER:
+        return "open_folder"
+    if pressed.value == ID_CONTINUE:
+        return "continue"
+    return "cancel"
+
+
+def _check_dll_present() -> bool:
+    """Gate startup on a valid cslol-dll.dll. Loops so the user can place the file and
+    click Continue without relaunching. Returns True to boot, False to exit."""
+    if sys.platform != "win32":
+        return True  # Only relevant on Windows
+
+    import subprocess
+
+    tools_dir = _get_tools_dir()
+    tools_dir.mkdir(parents=True, exist_ok=True)
+
+    while True:
+        status = _dll_status(tools_dir)
+        if status == "ok":
+            return True
+
+        action = _show_dll_dialog(tools_dir, status)
+        if action == "open_folder":
             try:
                 subprocess.run(["explorer", str(tools_dir)], check=False)
             except Exception:
                 pass
-        return False
-
-    # Handle button press
-    if button_pressed.value == ID_OPEN_FOLDER:
-        try:
-            subprocess.run(["explorer", str(tools_dir)], check=False)
-        except Exception:
-            pass
-
-    return False
+            # fall through -> loop re-shows; user places file then clicks Continue
+        elif action == "continue":
+            continue  # re-evaluate _dll_status at top
+        else:  # "cancel"
+            return False
 
 # Setup console first (before any imports that might use it)
 from .setup.console import setup_console, redirect_none_streams, start_console_buffer_manager

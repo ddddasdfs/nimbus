@@ -2,8 +2,8 @@
 ; This creates a proper Windows installer that registers the app
 
 #define MyAppName "nimbus"
-#define MyAppVersion "1.3.0"
-#define MyAppVersionInfo "1.3.0.0"
+#define MyAppVersion "1.4.0"
+#define MyAppVersionInfo "1.4.0.0"
 #define MyAppPublisher "nimbus Team"
 #define MyAppURL "https://github.com/ddddasdfs/Nimbus"
 #define MyAppExeName "nimbus.exe"

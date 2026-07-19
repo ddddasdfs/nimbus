@@ -60,6 +60,14 @@ def _check_dll_hash(dll_path) -> bool:
         return False
 
 
+def _dll_status(tools_dir) -> str:
+    """Pure DLL-gate decision: 'ok' | 'missing' | 'invalid'. No dialogs, no side effects."""
+    dll_path = tools_dir / "cslol-dll.dll"
+    if not dll_path.exists():
+        return "missing"
+    return "ok" if _check_dll_hash(dll_path) else "invalid"
+
+
 def _show_dll_invalid_dialog(tools_dir) -> bool:
     """Show a warning that the DLL file is invalid/untrusted."""
     import ctypes

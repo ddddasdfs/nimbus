@@ -1263,7 +1263,9 @@
     // Don't reset selection - restore it if it still exists in the mod list
 
     if (!mods || mods.length === 0) {
-      loadingEl.textContent = "No skins found";
+      // Empty library is normal on a fresh install - nimbus ships no mods. Say how
+      // to add them instead of "not found", which reads like a failure.
+      loadingEl.textContent = 'No custom mods for this champion yet — add them via "Add custom mods" in nimbus settings.';
       loadingEl.style.display = "block";
       return;
     }

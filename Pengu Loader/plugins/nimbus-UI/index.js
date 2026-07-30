@@ -652,6 +652,14 @@
     const icon = document.createElement("div");
     icon.className = "menu-item-icon";
     icon.style.webkitMaskImage = `url(http://127.0.0.1:${window.__nimbusBridge ? window.__nimbusBridge.port : 50000}/asset/golden_nimbus.png)`;
+    // Riot's .menu-item-icon sizing renders our square logo smaller than the
+    // neighbouring nav icons. Pin the mask so the whole logo shows, then scale
+    // it up visually (transform doesn't affect nav layout). Tune GOLDEN_ICON_SCALE.
+    const GOLDEN_ICON_SCALE = 1.35;
+    icon.style.webkitMaskSize = "contain";
+    icon.style.webkitMaskRepeat = "no-repeat";
+    icon.style.webkitMaskPosition = "center";
+    icon.style.transform = `scale(${GOLDEN_ICON_SCALE})`;
 
     iconWrapper.appendChild(glow);
     iconWrapper.appendChild(icon);

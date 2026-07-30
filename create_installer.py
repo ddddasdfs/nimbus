@@ -92,14 +92,18 @@ def create_installer():
     
     if png_icon.exists() and PIL_AVAILABLE:
         try:
-            # Convert PNG to ICO with multiple sizes for best compatibility
+            # Convert PNG to ICO with multiple sizes for best compatibility.
+            # bitmap_format="bmp" is REQUIRED: Pillow otherwise writes PNG-compressed
+            # frames, which Windows' GDI+/shell icon path fails to decode (it renders
+            # noise and Explorer falls back to a stale/generic icon).
             with Image.open(png_icon) as img:
                 ico_icon.parent.mkdir(exist_ok=True)
-                img.save(
-                    ico_icon,
-                    format="ICO",
-                    sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
-                )
+                ico_sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
+                try:
+                    img.save(ico_icon, format="ICO", sizes=ico_sizes, bitmap_format="bmp")
+                except TypeError:
+                    # Older Pillow without bitmap_format - fall back to default
+                    img.save(ico_icon, format="ICO", sizes=ico_sizes)
             print(f"Converted {png_icon} to {ico_icon}")
         except Exception as e:
             print(f"Warning: Could not convert {png_icon} to ICO: {e}")

@@ -45,6 +45,19 @@ def initialize_core_components(args, injection_threshold: Optional[float] = None
         ModStorageService()
     except Exception as exc:  # noqa: BLE001
         log.warning("Failed to initialize mods storage directories: %s", exc)
+
+    # Drop auto-apply pointers to custom mods the user has since deleted, so we don't
+    # keep trying to inject files that no longer exist.
+    try:
+        from utils.core.historic import prune_missing_custom_mods
+        pruned = prune_missing_custom_mods()
+        if pruned:
+            log.info(
+                "[HISTORIC] Cleared %d stale custom-mod entr%s (champions: %s)",
+                len(pruned), "y" if len(pruned) == 1 else "ies", ", ".join(pruned)
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("Historic prune skipped: %s", exc)
     
     # Initialize core components with error handling
     try:

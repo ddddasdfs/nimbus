@@ -12,6 +12,7 @@ Supports both:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Dict, Optional, Union
 
@@ -123,3 +124,48 @@ def get_custom_mod_path(value: Union[int, str]) -> Optional[str]:
     if is_custom_mod_path(value):
         return value[5:]  # Remove "path:" prefix
     return None
+
+
+def prune_missing_custom_mods(mods_root: Optional[Path] = None) -> list:
+    """Drop historic entries whose custom mod file no longer exists.
+
+    Deleting a mod leaves its auto-apply pointer behind, so nimbus keeps trying to
+    apply something that is gone. Plain skin/chroma IDs are never touched - only
+    "path:" entries whose target is missing under *mods_root*.
+
+    Args:
+        mods_root: Root of the mods directory. Defaults to <user data>/mods.
+
+    Returns:
+        List of champion ID keys that were removed (empty if nothing changed).
+        Never raises - a failure here must not block startup.
+    """
+    try:
+        if mods_root is None:
+            mods_root = get_user_data_dir() / "mods"
+        mods_root = Path(mods_root)
+
+        data = load_historic_map()
+        if not data:
+            return []
+
+        kept = {}
+        removed = []
+        for champ, value in data.items():
+            rel = get_custom_mod_path(value)
+            if rel is not None:
+                target = mods_root / rel.replace("/", os.sep)
+                if not target.exists():
+                    removed.append(champ)
+                    continue
+            kept[champ] = value
+
+        if not removed:
+            return []
+
+        p = _historic_file_path()
+        with p.open("w", encoding="utf-8") as f:
+            json.dump(kept, f, indent=2)
+        return removed
+    except Exception:
+        return []
